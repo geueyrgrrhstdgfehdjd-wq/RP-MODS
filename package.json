@@ -1,0 +1,12 @@
+{
+  "name": "rpmods-dashboard",
+  "version": "1.0.0",
+  "description": "RP MODS License Key Management Dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
