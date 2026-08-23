@@ -7,22 +7,42 @@ app.use(express.static(__dirname));
 
 let keysDatabase = [];
 
-// เปลี่ยน Prefix การสร้าง Key เป็น RPMODS
-function generateLicenseKey(prefix = "RPMODS") {
+function generateLicenseKey(customPrefix = "RPMODS") {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     const segment = () => Array.from({length: 4}, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
-    return `${prefix}-${segment()}-${segment()}-${segment()}`;
+    const cleanPrefix = customPrefix.trim().toUpperCase().replace(/\s+/g, '-');
+    return `${cleanPrefix}-${segment()}-${segment()}`;
 }
 
+app.get('/api/keys', (req, res) => {
+    res.json(keysDatabase);
+});
+
 app.post('/api/generate-key', (req, res) => {
-    const { count } = req.body;
+    const { count, type, days, customPrefix } = req.body;
     let newKeys = [];
+    const prefixToUse = customPrefix && customPrefix.trim() !== "" ? customPrefix : "RPMODS";
+
     for (let i = 0; i < (count || 1); i++) {
-        const keyData = { key: generateLicenseKey(), status: 'active', hwid: null };
-        keysDatabase.push(keyData);
+        const keyData = {
+            id: Date.now() + i,
+            key: generateLicenseKey(prefixToUse),
+            type: type || 'VIP',
+            duration: days || 30,
+            status: 'active',
+            hwid: 'Unbound',
+            createdAt: new Date().toLocaleDateString('th-TH')
+        };
+        keysDatabase.unshift(keyData);
         newKeys.push(keyData);
     }
     res.json({ success: true, generatedKeys: newKeys });
+});
+
+app.delete('/api/delete-key/:id', (req, res) => {
+    const keyId = parseInt(req.params.id);
+    keysDatabase = keysDatabase.filter(k => k.id !== keyId);
+    res.json({ success: true });
 });
 
 app.get('/api/dashboard-stats', (req, res) => {
@@ -30,11 +50,11 @@ app.get('/api/dashboard-stats', (req, res) => {
     const active = keysDatabase.filter(k => k.status === 'active').length;
     const expired = keysDatabase.filter(k => k.status === 'expired').length;
     const banned = keysDatabase.filter(k => k.status === 'banned').length;
-    const freshKeys = keysDatabase.filter(k => k.hwid === null).length;
+    const freshKeys = keysDatabase.filter(k => k.hwid === 'Unbound').length;
 
     res.json({
         total, active, expired, banned, freshKeys,
-        avgDevice: total > 0 ? (keysDatabase.filter(k => k.hwid !== null).length / total).toFixed(1) : "0.0"
+        avgDevice: total > 0 ? ((total - freshKeys) / total).toFixed(1) : "0.0"
     });
 });
 
@@ -43,4 +63,4 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`RP MODS Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`RP MODS Vector 3D Dashboard running on port ${PORT}`));
