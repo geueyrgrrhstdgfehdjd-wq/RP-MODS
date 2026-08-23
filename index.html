@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RP MODS - 3D Control Center</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #0B0E14; color: #94A3B8; font-family: sans-serif; }
+        .glass-card { background: #131822; border: 1px solid #1E293B; border-radius: 12px; }
+        .modal-backdrop { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[#0F131C] border-r border-[#1E293B] p-4 flex flex-col justify-between hidden md:flex">
+        <div>
+            <!-- Logo RP MODS -->
+            <div class="flex items-center gap-3 mb-8 px-2">
+                <i class="fa-solid fa-shield-halved text-2xl text-cyan-400"></i>
+                <span class="font-bold text-lg text-white tracking-wider">RP MODS</span>
+            </div>
+
+            <!-- Active Node Box -->
+            <div class="bg-[#171D2A] p-3 rounded-lg border border-slate-800 mb-6">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Active Node</p>
+                <p class="text-sm text-white font-medium flex items-center gap-2 mt-1">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    RP MODS <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">main</span>
+                </p>
+            </div>
+
+            <nav class="space-y-1 text-sm font-medium">
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <i class="fa-solid fa-chart-pie"></i> 3D Dashboard
+                </a>
+                <a href="#" class="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-800/50 hover:text-white transition">
+                    <span class="flex items-center gap-3"><i class="fa-solid fa-key"></i> Key Manager</span>
+                    <span id="nav-key-count" class="bg-slate-800 text-xs px-2 py-0.5 rounded-full">0</span>
+                </a>
+                <a href="#" onclick="openModal()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-800/50 hover:text-white transition">
+                    <i class="fa-solid fa-gears"></i> Key Generator Hub
+                </a>
+            </nav>
+        </div>
+
+        <div class="text-xs text-slate-600 text-center">
+            RP MODS v2.4 Authentication
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+        <header class="flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-white">3D Control Center</h1>
+                <p class="text-xs text-slate-500">Next-Generation License Security & HWID Authentication Platform</p>
+            </div>
+            <button onclick="openModal()" class="bg-cyan-400 hover:bg-cyan-300 text-black font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition shadow-lg shadow-cyan-500/20 text-sm">
+                <i class="fa-solid fa-plus"></i> Generate Key
+            </button>
+        </header>
+
+        <!-- KPI Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="glass-card p-4">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] uppercase font-semibold text-slate-400">Total Registered Licenses</span>
+                    <div class="p-2 bg-slate-800/50 rounded-lg text-cyan-400 text-xs"><i class="fa-solid fa-database"></i></div>
+                </div>
+                <div id="stat-total" class="text-3xl font-extrabold text-white my-2">0</div>
+                <p class="text-xs text-slate-500">All database records</p>
+            </div>
+
+            <div class="glass-card p-4">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] uppercase font-semibold text-slate-400">Active & Operational</span>
+                    <div class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400 text-xs"><i class="fa-solid fa-check-circle"></i></div>
+                </div>
+                <div id="stat-active" class="text-3xl font-extrabold text-emerald-400 my-2">0</div>
+                <p class="text-xs text-emerald-500/80"><i class="fa-solid fa-bolt"></i> Operational in Client App</p>
+            </div>
+
+            <div class="glass-card p-4">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] uppercase font-semibold text-slate-400">Expired Licenses</span>
+                    <div class="p-2 bg-amber-500/10 rounded-lg text-amber-400 text-xs"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                </div>
+                <div id="stat-expired" class="text-3xl font-extrabold text-amber-400 my-2">0</div>
+                <p class="text-xs text-amber-500/80">Requires Extension</p>
+            </div>
+
+            <div class="glass-card p-4">
+                <div class="flex justify-between items-start">
+                    <span class="text-[11px] uppercase font-semibold text-slate-400">Banned / Blocked</span>
+                    <div class="p-2 bg-rose-500/10 rounded-lg text-rose-500 text-xs"><i class="fa-solid fa-ban"></i></div>
+                </div>
+                <div id="stat-banned" class="text-3xl font-extrabold text-rose-500 my-2">0</div>
+                <p class="text-xs text-rose-500/80">Blacklisted Hardware</p>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="glass-card p-5 md:col-span-2 flex flex-col justify-between">
+                <h3 class="text-xs font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400"></span> Real-time Key Status Distribution
+                </h3>
+                <div class="flex flex-col sm:flex-row items-center justify-around gap-6">
+                    <div class="w-40 h-40">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                    <div class="space-y-3 text-xs">
+                        <div class="flex items-center gap-3"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Active Licenses: <b id="chart-active-val" class="text-white">0</b></div>
+                        <div class="flex items-center gap-3"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Expired Licenses: <b id="chart-expired-val" class="text-white">0</b></div>
+                        <div class="flex items-center gap-3"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Banned Licenses: <b id="chart-banned-val" class="text-white">0</b></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-5 space-y-4">
+                <h3 class="text-xs font-semibold text-slate-300 flex items-center gap-2">
+                    <i class="fa-solid fa-microchip text-amber-400"></i> Hardware Device Binding Insights
+                </h3>
+                <div class="grid grid-cols-2 gap-3 text-center pt-2">
+                    <div class="bg-[#171D2A] p-4 rounded-lg border border-slate-800">
+                        <p class="text-2xl font-bold text-cyan-400" id="stat-avg-device">0.0</p>
+                        <p class="text-[10px] text-slate-500 mt-1">Avg Devices / Key</p>
+                    </div>
+                    <div class="bg-[#171D2A] p-4 rounded-lg border border-slate-800">
+                        <p class="text-2xl font-bold text-emerald-400" id="stat-fresh-keys">0</p>
+                        <p class="text-[10px] text-slate-500 mt-1">Fresh Keys</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Generate Key Popup -->
+    <div id="genModal" class="fixed inset-0 modal-backdrop hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-[#131822] border border-slate-700 rounded-xl w-full max-w-xl overflow-hidden shadow-2xl">
+            <div class="flex justify-between items-center p-4 border-b border-slate-800 bg-[#0F131C]">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    License Key Generation Hub (RP MODS)
+                </h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="p-6 space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Key Template</label>
+                        <select id="modal-template" class="w-full bg-[#1A202C] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                            <option value="30">VIP Key (30 Days)</option>
+                            <option value="1">Trial Key (+1 Day)</option>
+                            <option value="365">VIP Stay (+365 Days)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Quantity (จำนวน)</label>
+                        <input id="modal-quantity" type="number" value="1" min="1" max="100" class="w-full bg-[#1A202C] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-400 mb-1">License Type</label>
+                        <select class="w-full bg-[#1A202C] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                            <option>VIP</option>
+                            <option>Trial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Active Node Assignment</label>
+                        <select class="w-full bg-[#1A202C] border border-slate-700 rounded p-2 text-white outline-none focus:border-cyan-400">
+                            <option>RP MODS (main)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-400 mb-1">Preview / Output Key</label>
+                    <textarea id="modal-output" readonly rows="3" class="w-full bg-[#0B0E14] border border-slate-800 rounded p-2 text-cyan-400 font-mono text-[11px] resize-none" placeholder="กด Generate เพื่อสร้าง Key..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-3 p-4 border-t border-slate-800 bg-[#0F131C]">
+                <button onclick="generateKeysLogic()" class="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-2 rounded text-xs transition">
+                    + Generate Key Batch
+                </button>
+                <button onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-4 py-2 rounded text-xs">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Active', 'Expired', 'Banned'],
+                datasets: [{
+                    data: [0, 0, 0],
+                    backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: { cutout: '75%', plugins: { legend: { display: false } } }
+        });
+
+        function updateDashboardUI(data) {
+            document.getElementById('stat-total').innerText = data.total;
+            document.getElementById('stat-active').innerText = data.active;
+            document.getElementById('stat-expired').innerText = data.expired;
+            document.getElementById('stat-banned').innerText = data.banned;
+            
+            document.getElementById('nav-key-count').innerText = data.total;
+            document.getElementById('chart-active-val').innerText = data.active;
+            document.getElementById('chart-expired-val').innerText = data.expired;
+            document.getElementById('chart-banned-val').innerText = data.banned;
+
+            document.getElementById('stat-avg-device').innerText = data.avgDevice;
+            document.getElementById('stat-fresh-keys').innerText = data.freshKeys;
+
+            myChart.data.datasets[0].data = [data.active, data.expired, data.banned];
+            myChart.update();
+        }
+
+        async function fetchDashboardStats() {
+            try {
+                const res = await fetch('/api/dashboard-stats');
+                const data = await res.json();
+                updateDashboardUI(data);
+            } catch (err) {
+                console.error("Error fetching stats:", err);
+            }
+        }
+
+        async function generateKeysLogic() {
+            const qty = parseInt(document.getElementById('modal-quantity').value) || 1;
+            try {
+                const res = await fetch('/api/generate-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ count: qty })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    const keysList = result.generatedKeys.map(k => k.key).join('\n');
+                    document.getElementById('modal-output').value = keysList;
+                    fetchDashboardStats();
+                }
+            } catch (err) {
+                console.error("Error generating keys:", err);
+            }
+        }
+
+        function openModal() { document.getElementById('genModal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('genModal').classList.add('hidden'); }
+
+        fetchDashboardStats();
+    </script>
+</body>
+</html>
