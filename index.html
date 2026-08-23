@@ -6,7 +6,7 @@
     <title>RP MODS - 3D Cyber Control Center</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
+    <!-- FontAwesome Vector Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -21,7 +21,6 @@
             overflow: hidden;
         }
 
-        /* Canvas 3D Background */
         #webgl-bg {
             position: fixed;
             top: 0; left: 0;
@@ -30,7 +29,6 @@
             pointer-events: none;
         }
 
-        /* Glassmorphism 3D Style Cards */
         .glass-card-3d {
             background: rgba(15, 23, 42, 0.65);
             backdrop-filter: blur(12px);
@@ -47,7 +45,6 @@
             box-shadow: 0 20px 35px -10px rgba(6, 182, 212, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.1);
         }
 
-        /* Neon Glow Button Effects */
         .btn-neon-cyan {
             background: linear-gradient(135deg, #06b6d4, #3b82f6);
             box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
@@ -59,7 +56,6 @@
             transform: scale(1.03);
         }
 
-        /* Active Navigation Tab */
         .nav-btn.active {
             background: linear-gradient(90deg, rgba(6, 182, 212, 0.2), transparent);
             color: #22d3ee;
@@ -72,18 +68,42 @@
             backdrop-filter: blur(8px); 
         }
 
-        /* Animated Pulse Light */
-        @keyframes cyber-pulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.8; }
+        /* Custom Vector Toast Notification */
+        #toast-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .cyber-glow { animation: cyber-pulse 3s infinite ease-in-out; }
+        .toast-item {
+            background: #0f172a;
+            border: 1px solid #06b6d4;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 12px;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+            display: flex;
+            items-center: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
     </style>
 </head>
 <body class="flex h-screen relative select-none">
 
-    <!-- 3D Interactive WebGL Canvas -->
+    <!-- 3D Interactive Canvas -->
     <canvas id="webgl-bg"></canvas>
+
+    <!-- Vector Toast Container -->
+    <div id="toast-box"></div>
 
     <!-- Mobile Header -->
     <div class="md:hidden fixed top-0 left-0 right-0 bg-[#070b14]/90 backdrop-blur-md border-b border-slate-800/80 p-4 flex justify-between items-center z-40">
@@ -107,7 +127,9 @@
 
             <div class="bg-[#0f172a]/80 p-3 rounded-xl border border-cyan-500/20 mb-6 relative overflow-hidden">
                 <div class="absolute -right-4 -bottom-4 w-12 h-12 bg-cyan-500/10 rounded-full blur-xl"></div>
-                <p class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Active 3D Node</p>
+                <p class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-network-wired"></i> Active Node
+                </p>
                 <p class="text-xs text-white font-medium flex items-center gap-2 mt-1">
                     <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
                     RP MODS <span class="text-[9px] bg-cyan-950 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded font-mono">ONLINE</span>
@@ -124,13 +146,13 @@
                     <span id="nav-key-count" class="bg-cyan-950 border border-cyan-500/40 text-[10px] px-2 py-0.5 rounded-full text-cyan-300 font-mono">0</span>
                 </button>
                 <button onclick="openModal()" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left hover:bg-slate-800/40 hover:text-white transition-all text-slate-400">
-                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> Key Generator Hub
+                    <i class="fa-solid fa-sliders text-purple-400"></i> Key Generator Hub
                 </button>
             </nav>
         </div>
 
-        <div class="text-[10px] text-slate-500 text-center font-mono">
-            RP MODS 3D Core v3.0
+        <div class="text-[10px] text-slate-500 text-center font-mono flex items-center justify-center gap-1">
+            <i class="fa-solid fa-code"></i> RP MODS 3D Core v3.0
         </div>
     </aside>
 
@@ -155,22 +177,30 @@
             <!-- KPI Cards Grid -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                 <div class="glass-card-3d p-4 relative overflow-hidden">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Licenses</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-database text-cyan-400"></i> Total Licenses
+                    </span>
                     <div id="stat-total" class="text-3xl font-black text-white my-1 font-mono">0</div>
                     <p class="text-[10px] text-cyan-400/80">System Records</p>
                 </div>
                 <div class="glass-card-3d p-4 border-emerald-500/30">
-                    <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Active</span>
+                    <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-check"></i> Active
+                    </span>
                     <div id="stat-active" class="text-3xl font-black text-emerald-400 my-1 font-mono">0</div>
                     <p class="text-[10px] text-emerald-500/80">Operational</p>
                 </div>
                 <div class="glass-card-3d p-4 border-amber-500/30">
-                    <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Expired</span>
+                    <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-hourglass-half"></i> Expired
+                    </span>
                     <div id="stat-expired" class="text-3xl font-black text-amber-400 my-1 font-mono">0</div>
                     <p class="text-[10px] text-amber-500/80">Require Extension</p>
                 </div>
                 <div class="glass-card-3d p-4 border-rose-500/30">
-                    <span class="text-[10px] uppercase font-bold text-rose-400 tracking-wider">Banned</span>
+                    <span class="text-[10px] uppercase font-bold text-rose-400 tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-ban"></i> Banned
+                    </span>
                     <div id="stat-banned" class="text-3xl font-black text-rose-500 my-1 font-mono">0</div>
                     <p class="text-[10px] text-rose-500/80">Blacklisted</p>
                 </div>
@@ -201,11 +231,15 @@
                     <div class="grid grid-cols-2 gap-3 text-center pt-2">
                         <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
                             <p class="text-2xl font-black text-cyan-400 font-mono" id="stat-avg-device">0.0</p>
-                            <p class="text-[9px] text-slate-400 mt-1 uppercase">Avg Devices/Key</p>
+                            <p class="text-[9px] text-slate-400 mt-1 uppercase flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-laptop"></i> Avg Devices
+                            </p>
                         </div>
                         <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
                             <p class="text-2xl font-black text-emerald-400 font-mono" id="stat-fresh-keys">0</p>
-                            <p class="text-[9px] text-slate-400 mt-1 uppercase">Fresh Unbound</p>
+                            <p class="text-[9px] text-slate-400 mt-1 uppercase flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-link-slash"></i> Fresh Unbound
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -215,19 +249,22 @@
         <!-- PAGE 2: KEY MANAGER -->
         <div id="page-keymanager-content" class="space-y-4 hidden">
             <div class="flex justify-between items-center gap-4">
-                <input type="text" id="search-key" oninput="renderKeysTable()" placeholder="🔍 ค้นหา License Key..." class="bg-slate-900/80 border border-slate-700/60 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-cyan-400 w-full max-w-xs shadow-inner">
+                <div class="relative w-full max-w-xs">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+                    <input type="text" id="search-key" oninput="renderKeysTable()" placeholder="ค้นหา License Key..." class="bg-slate-900/80 border border-slate-700/60 rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-cyan-400 w-full shadow-inner">
+                </div>
             </div>
 
             <div class="glass-card-3d overflow-x-auto">
                 <table class="w-full text-left text-xs text-slate-300">
                     <thead class="bg-slate-950/80 text-cyan-400 border-b border-slate-800 font-bold uppercase text-[10px] tracking-wider">
                         <tr>
-                            <th class="p-3.5">License Key Name</th>
-                            <th class="p-3.5">Type</th>
-                            <th class="p-3.5">Status</th>
-                            <th class="p-3.5">HWID Binding</th>
-                            <th class="p-3.5">Created</th>
-                            <th class="p-3.5 text-center">Actions</th>
+                            <th class="p-3.5"><i class="fa-solid fa-key mr-1"></i> License Key Name</th>
+                            <th class="p-3.5"><i class="fa-solid fa-layer-group mr-1"></i> Type</th>
+                            <th class="p-3.5"><i class="fa-solid fa-signal mr-1"></i> Status</th>
+                            <th class="p-3.5"><i class="fa-solid fa-fingerprint mr-1"></i> HWID Binding</th>
+                            <th class="p-3.5"><i class="fa-solid fa-calendar-days mr-1"></i> Created</th>
+                            <th class="p-3.5 text-center"><i class="fa-solid fa-gear mr-1"></i> Actions</th>
                         </tr>
                     </thead>
                     <tbody id="keys-table-body" class="divide-y divide-slate-800/40 font-mono">
@@ -243,7 +280,7 @@
         <div class="glass-card-3d bg-[#0b1329]/95 border-cyan-500/40 w-full max-w-md overflow-hidden shadow-2xl">
             <div class="flex justify-between items-center p-4 border-b border-slate-800/80 bg-slate-950/80">
                 <h3 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-key text-cyan-400"></i> Generate License Keys
+                    <i class="fa-solid fa-terminal text-cyan-400"></i> Generate License Keys
                 </h3>
                 <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -251,7 +288,7 @@
                 <div>
                     <label class="block text-slate-300 font-bold mb-1">Custom Key Name / Prefix (ระบุชื่อคีย์)</label>
                     <input id="modal-custom-prefix" type="text" placeholder="ตัวอย่าง: RPMODS-VIP-SOMCHAI" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 text-cyan-300 font-mono outline-none focus:border-cyan-400">
-                    <p class="text-[10px] text-slate-500 mt-1">*หากเว้นว่าง ระบบจะสุ่ม RPMODS ให้สั้นกระชับทันที</p>
+                    <p class="text-[10px] text-slate-500 mt-1">*หากเว้นว่าง ระบบจะใช้ค่าเริ่มต้น RPMODS สุ่มสับให้อัตโนมัติ</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
@@ -282,6 +319,20 @@
 
     <!-- JavaScript & 3D Interactive Engine -->
     <script>
+        // Custom Toast Notification System
+        function showToast(message, iconClass = 'fa-solid fa-circle-check text-cyan-400') {
+            const container = document.getElementById('toast-box');
+            const toast = document.createElement('div');
+            toast.className = 'toast-item';
+            toast.innerHTML = `<i class="${iconClass}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = '0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
         // --- 1. Three.js Interactive 3D Background Engine ---
         const canvas = document.getElementById('webgl-bg');
         const scene = new THREE.Scene();
@@ -291,7 +342,6 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
 
-        // 3D Particles Matrix
         const particlesCount = 350;
         const positions = new Float32Array(particlesCount * 3);
         for(let i = 0; i < particlesCount * 3; i++) {
@@ -312,7 +362,6 @@
         scene.add(particlesMesh);
         camera.position.z = 5;
 
-        // Interactive Touch/Mouse Effect
         let mouseX = 0, mouseY = 0;
         window.addEventListener('pointermove', (e) => {
             mouseX = (e.clientX / window.innerWidth - 0.5) * 0.5;
@@ -324,7 +373,6 @@
             particlesMesh.rotation.y += 0.001;
             particlesMesh.rotation.x += 0.0005;
             
-            // Camera smoothly tilts on touch
             camera.position.x += (mouseX - camera.position.x) * 0.05;
             camera.position.y += (-mouseY - camera.position.y) * 0.05;
             camera.lookAt(scene.position);
@@ -441,7 +489,7 @@
                 closeModal();
                 fetchDashboardStats();
                 loadKeysTable();
-                alert(`✨ สร้าง ${qty} License Key สำเร็จแล้ว!`);
+                showToast(`สร้าง ${qty} License Key เรียบร้อยแล้ว!`, 'fa-solid fa-wand-magic-sparkles text-cyan-400');
             }
         }
 
@@ -450,12 +498,13 @@
                 await fetch(`/api/delete-key/${id}`, { method: 'DELETE' });
                 fetchDashboardStats();
                 loadKeysTable();
+                showToast("ลบ Key ออกจากระบบแล้ว!", "fa-solid fa-trash-can text-rose-400");
             }
         }
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text);
-            alert("📋 คัดลอก License Key เรียบร้อย: " + text);
+            showToast("คัดลอก License Key ลง Clipboard แล้ว!", "fa-solid fa-copy text-emerald-400");
         }
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
