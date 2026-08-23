@@ -8,8 +8,8 @@ const ADMIN_CODE = "ZDSAWERBHKLJ";
 const RESELLER_CODE = "ResellBBVC";
 
 // ---------------- DATABASE (START EMPTY) ---------------- //
-let keysDatabase = [];     // เคลียร์ว่าง - ไม่มี Key ค้าง
-let resellerPanels = [];   // ✅ เคลียร์ว่าง - ไม่สร้างแผงให้อัตโนมัติอีกต่อไป
+let keysDatabase = [];
+let resellerPanels = [];
 let auditLogs = [
     { id: 1, timestamp: new Date().toLocaleString('th-TH'), action: 'SYSTEM_START', detail: 'ระบบเริ่มต้นการทำงาน', user: 'SYSTEM' }
 ];
@@ -32,7 +32,6 @@ function generateKey(prefix = "RPMODS") {
 
 // ---------------- API ENDPOINTS ---------------- //
 
-// 1. Login
 app.post('/api/login', (req, res) => {
     const { code } = req.body;
     if (code === ADMIN_CODE) {
@@ -46,7 +45,6 @@ app.post('/api/login', (req, res) => {
     res.status(401).json({ success: false, message: 'รหัสผ่านไม่ถูกต้อง!' });
 });
 
-// 2. Panel Management
 app.get('/api/panels', (req, res) => {
     res.json(resellerPanels);
 });
@@ -72,7 +70,7 @@ app.post('/api/create-panel', (req, res) => {
         keyQuota: isLifetime ? 99999 : 500,
         keysCreated: 0,
         boundSessionId: null,
-        expiresAt: expireDate // null = ถาวร
+        expiresAt: expireDate
     };
     
     resellerPanels.unshift(newPanel);
@@ -106,7 +104,6 @@ app.post('/api/claim-panel', (req, res) => {
     res.json({ success: true, panel });
 });
 
-// 3. Key Management
 app.get('/api/keys', (req, res) => {
     const owner = req.query.owner || 'ADMIN';
     res.json(owner === 'ADMIN' ? keysDatabase : keysDatabase.filter(k => k.owner === owner));
@@ -158,7 +155,6 @@ app.delete('/api/delete-key/:id', (req, res) => {
     res.json({ success: true });
 });
 
-// 4. Stats & Logs
 app.get('/api/stats', (req, res) => {
     const owner = req.query.owner || 'ADMIN';
     const targetKeys = owner === 'ADMIN' ? keysDatabase : keysDatabase.filter(k => k.owner === owner);
@@ -207,7 +203,6 @@ app.get('/', (req, res) => {
     </head>
     <body class="min-h-screen flex text-sm" onload="checkAutoLogin()">
 
-        <!-- LOGIN GATE -->
         <div id="gate-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-purple-950/40">
             <div class="glass-card p-8 max-w-md w-full rounded-3xl text-center space-y-6 border-2 border-purple-300">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white mx-auto flex items-center justify-center text-3xl shadow-lg">
@@ -224,7 +219,6 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- RESELLER PANEL SELECTOR -->
         <div id="selector-screen" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-purple-950/40 hidden">
             <div class="glass-card p-6 max-w-2xl w-full rounded-3xl space-y-5 border-2 border-purple-300">
                 <div class="flex justify-between items-center border-b border-purple-200 pb-4">
@@ -235,7 +229,6 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- MAIN DASHBOARD HUB -->
         <div id="dashboard-screen" class="flex w-full h-screen overflow-hidden hidden">
             <aside class="w-64 border-r border-purple-200 p-4 flex flex-col justify-between bg-white shrink-0">
                 <div class="space-y-6">
@@ -269,7 +262,6 @@ app.get('/', (req, res) => {
             <main class="flex-1 p-8 space-y-6 overflow-y-auto">
                 <header class="flex justify-between items-center pb-5 border-b border-purple-200">
                     <h1 class="text-xl font-extrabold text-purple-950">RP MODS Dashboard</h1>
-                    <button onclick="openKeyModal()" class="btn-neon-purple px-4 py-2.5 rounded-xl text-xs">+ Generate Key</button>
                 </header>
 
                 <div id="tab-dashboard" class="tab-view active space-y-6">
@@ -325,7 +317,6 @@ app.get('/', (req, res) => {
             </main>
         </div>
 
-        <!-- MODAL CREATE PANEL -->
         <div id="modal-panel" class="fixed inset-0 bg-purple-950/40 hidden z-50 flex items-center justify-center p-4">
             <div class="glass-card p-6 max-w-md w-full rounded-3xl space-y-4 border-2 border-purple-300">
                 <h3 class="text-purple-950 font-bold text-sm">สร้างแผง Reseller ใหม่</h3>
@@ -504,4 +495,6 @@ app.get('/', (req, res) => {
     `);
 });
 
-app.listen(3000, () => console.log('🚀 Server running on http://localhost:3000'));
+// ✅ แก้ไขส่วนนี้ให้ใช้วิธีเรียก Port จาก process.env.PORT สำหรับ Render
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
