@@ -1,7 +1,6 @@
 {
-  "name": "rpmods-dashboard",
+  "name": "rp-mods-panel",
   "version": "1.0.0",
-  "description": "RP MODS License Key Management Dashboard",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
