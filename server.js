@@ -9,8 +9,8 @@ const RESELLER_CODE = "ResellBBVC";
 
 // Datastores
 let keysDatabase = [
-    { id: 1, key: "NABEE-A8K2-99XZ", duration: 30, status: 'active', hwid: 'DEV-8821-X', owner: 'ADMIN', createdAt: new Date().toLocaleString('th-TH') },
-    { id: 2, key: "NABEE-PL91-11QQ", duration: 1, status: 'active', hwid: 'Unbound', owner: 'ADMIN', createdAt: new Date().toLocaleString('th-TH') }
+    { id: 1, key: "RPMODS-A8K2-99XZ", duration: 30, status: 'active', hwid: 'DEV-8821-X', owner: 'ADMIN', createdAt: new Date().toLocaleString('th-TH') },
+    { id: 2, key: "RPMODS-PL91-11QQ", duration: 1, status: 'active', hwid: 'Unbound', owner: 'ADMIN', createdAt: new Date().toLocaleString('th-TH') }
 ];
 
 let resellerPanels = [
@@ -33,7 +33,7 @@ function logActivity(action, detail, user) {
     if (auditLogs.length > 50) auditLogs.pop();
 }
 
-function generateKey(prefix = "NABEE") {
+function generateKey(prefix = "RPMODS") {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     const rand = () => Array.from({length: 4}, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
     return `${prefix.toUpperCase()}-${rand()}-${rand()}`;
@@ -112,7 +112,7 @@ app.post('/api/generate-key', (req, res) => {
     }
 
     let created = [];
-    const keyPrefix = prefix && prefix.trim() !== '' ? prefix : (isReseller ? 'RESELL' : 'NABEE');
+    const keyPrefix = prefix && prefix.trim() !== '' ? prefix : (isReseller ? 'RESELL' : 'RPMODS');
     for (let i = 0; i < qty; i++) {
         const item = {
             id: Date.now() + i,
@@ -201,7 +201,7 @@ app.get('/api/logs', (req, res) => {
     res.json(owner === 'ADMIN' ? auditLogs : auditLogs.filter(l => l.user === owner || l.user === 'SYSTEM'));
 });
 
-// ---------------- FRONTEND UI (NABEEPROXYS STYLE) ---------------- //
+// ---------------- FRONTEND UI (PURPLE NEON STYLE) ---------------- //
 
 app.get('/', (req, res) => {
     res.send(`
@@ -209,67 +209,56 @@ app.get('/', (req, res) => {
     <html lang="th">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>NABEE PROXIES & LICENSES — Official Store</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+        <title>RP MODS - Neon Violet Hub</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
         <style>
-            * { font-family: 'Kanit', sans-serif; box-sizing: border-box; }
-            .font-space { font-family: 'Space Grotesk', sans-serif; }
-            .font-mono { font-family: 'JetBrains Mono', monospace; }
+            * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; }
+            .font-mono { font-family: 'Space Grotesk', monospace; }
             
+            /* NEON PURPLE THEME BACKGROUND */
             body { 
-                background: #080a12; 
-                color: #94a3b8; 
-                overflow-x: hidden;
+                background: #090514; 
+                color: #e2e8f0; 
+                overflow-x: hidden; 
             }
 
-            /* Scrollbar */
             ::-webkit-scrollbar { width: 6px; height: 6px; }
-            ::-webkit-scrollbar-track { background: #080a12; }
-            ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 99px; }
-            ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+            ::-webkit-scrollbar-track { background: #090514; }
+            ::-webkit-scrollbar-thumb { background: #2e1065; border-radius: 10px; }
+            ::-webkit-scrollbar-thumb:hover { background: #a855f7; }
 
-            /* Nabee Modern Glass Cards */
-            .nabee-card {
-                background: rgba(15, 21, 37, 0.75);
-                backdrop-filter: blur(16px);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+            /* GLASS CARD WITH NEON BORDER */
+            .glass-card {
+                background: rgba(18, 10, 36, 0.75);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(168, 85, 247, 0.18);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
             }
 
-            .nabee-card-hover {
-                transition: all 0.3s ease;
+            .glass-card-hover {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
-            .nabee-card-hover:hover {
+            .glass-card-hover:hover {
                 transform: translateY(-4px);
-                border-color: rgba(139, 92, 246, 0.4);
-                box-shadow: 0 10px 30px rgba(139, 92, 246, 0.15);
+                border-color: rgba(192, 132, 252, 0.5);
+                box-shadow: 0 0 25px rgba(168, 85, 247, 0.25);
             }
 
-            /* Purple Glow Gradient Buttons */
-            .btn-nabee-primary {
-                background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-                color: #ffffff;
-                font-weight: 600;
-                box-shadow: 0 4px 20px rgba(139, 92, 246, 0.35);
+            /* WHITE-PURPLE NEON BUTTON */
+            .btn-neon-purple {
+                background: linear-gradient(135deg, #ffffff 0%, #c084fc 50%, #9333ea 100%);
+                color: #000000;
+                font-weight: 800;
+                box-shadow: 0 0 20px rgba(192, 132, 252, 0.4);
                 transition: all 0.25s ease;
             }
-            .btn-nabee-primary:hover {
-                box-shadow: 0 6px 28px rgba(139, 92, 246, 0.6);
-                transform: translateY(-2px);
-            }
-
-            .btn-nabee-secondary {
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                color: #f1f5f9;
-                transition: all 0.25s ease;
-            }
-            .btn-nabee-secondary:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: rgba(255, 255, 255, 0.2);
+            .btn-neon-purple:hover {
+                box-shadow: 0 0 30px rgba(192, 132, 252, 0.8);
+                transform: scale(1.02);
             }
 
             .sidebar-item {
@@ -277,92 +266,120 @@ app.get('/', (req, res) => {
                 align-items: center;
                 gap: 12px;
                 padding: 12px 16px;
-                border-radius: 12px;
-                font-size: 14px;
-                font-weight: 500;
-                color: #64748b;
-                transition: all 0.2s ease;
+                border-radius: 14px;
+                font-size: 13px;
+                font-weight: 600;
+                color: #94a3b8;
+                transition: all 0.25s ease;
                 cursor: pointer;
+                white-space: nowrap;
             }
-            .sidebar-item:hover { 
-                background: rgba(255, 255, 255, 0.04); 
-                color: #f1f5f9; 
-            }
+            .sidebar-item:hover { background: rgba(168, 85, 247, 0.1); color: #ffffff; }
             .sidebar-item.active {
-                background: rgba(139, 92, 246, 0.15);
-                color: #a78bfa;
-                border: 1px solid rgba(139, 92, 246, 0.3);
+                background: linear-gradient(90deg, rgba(168, 85, 247, 0.25) 0%, rgba(168, 85, 247, 0.02) 100%);
+                border-left: 3px solid #c084fc;
+                color: #ffffff;
+                box-shadow: inset 10px 0 20px -10px rgba(192, 132, 252, 0.3);
             }
 
-            .tab-view { display: none; opacity: 0; transition: opacity 0.25s ease; }
+            /* COLLAPSED SIDEBAR STYLE */
+            .sidebar-collapsed {
+                width: 80px !important;
+            }
+            .sidebar-collapsed .sidebar-text,
+            .sidebar-collapsed .sidebar-hide-on-collapse {
+                display: none !important;
+            }
+            .sidebar-collapsed .sidebar-item {
+                justify-content: center;
+                padding: 12px;
+            }
+
+            .tab-view { display: none; opacity: 0; transition: opacity 0.3s ease; }
             .tab-view.active { display: block; opacity: 1; }
 
-            /* Ambient Background Aura */
-            .aura-1 { position: fixed; top: -200px; left: 20%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, rgba(0,0,0,0) 70%); pointer-events: none; }
-            .aura-2 { position: fixed; bottom: -200px; right: 10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, rgba(0,0,0,0) 70%); pointer-events: none; }
+            /* NEON GLOW LIGHTS IN BACKGROUND */
+            .bg-glow-1 { position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(168,85,247,0.15) 0%, rgba(0,0,0,0) 70%); pointer-events: none; }
+            .bg-glow-2 { position: fixed; bottom: -10%; right: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(236,72,153,0.12) 0%, rgba(0,0,0,0) 70%); pointer-events: none; }
+            
+            /* NEON TEXT EFFECT */
+            .neon-text-purple {
+                text-shadow: 0 0 12px rgba(192, 132, 252, 0.6);
+            }
         </style>
     </head>
     <body class="min-h-screen flex text-sm relative" onload="checkAutoLogin()">
 
-        <div class="aura-1"></div>
-        <div class="aura-2"></div>
+        <div class="bg-glow-1"></div>
+        <div class="bg-glow-2"></div>
 
-        <div id="toast-box" class="fixed top-6 right-6 z-50 space-y-3"></div>
+        <div id="toast-box" class="fixed top-5 right-5 z-50 space-y-3"></div>
 
-        <!-- 1. AUTHENTICATION OVERLAY -->
-        <div id="gate-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#080a12]/95 backdrop-blur-2xl">
-            <div class="nabee-card p-8 max-w-md w-full rounded-3xl text-center space-y-6 relative overflow-hidden border border-purple-500/20 shadow-2xl">
-                <div class="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 mx-auto flex items-center justify-center text-3xl shadow-lg shadow-purple-500/10">
-                    <i class="fa-solid fa-store"></i>
+        <!-- 1. LOGIN GATE -->
+        <div id="gate-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#05020a]/90 backdrop-blur-xl">
+            <div class="glass-card p-8 max-w-md w-full rounded-3xl text-center space-y-6 relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl"></div>
+                
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white mx-auto flex items-center justify-center text-3xl shadow-lg shadow-purple-500/40">
+                    <i class="fa-solid fa-shield-halved"></i>
                 </div>
                 
                 <div>
-                    <h2 class="font-space text-2xl font-bold text-white tracking-wide">NABEE PROXIES</h2>
-                    <p class="text-xs text-slate-400 mt-1">ระบบจัดการ License Key และสินค้าไอทีออนไลน์</p>
+                    <h2 class="text-white font-extrabold text-xl tracking-wider uppercase neon-text-purple">RP MODS SYSTEM</h2>
+                    <p class="text-xs text-purple-300/60 mt-1">เข้าสู่ระบบจัดการ License คีย์ และ เอเยนต์</p>
                 </div>
 
                 <div class="space-y-4">
-                    <input id="pass-code" type="password" placeholder="กรอกรหัสผ่านเพื่อเข้าใช้งาน..." class="w-full bg-[#0d111d] border border-slate-800 rounded-2xl py-3.5 px-4 text-center text-purple-300 font-mono tracking-widest outline-none focus:border-purple-500 transition-all text-sm">
-                    <button onclick="login()" class="w-full btn-nabee-primary py-3.5 rounded-2xl text-xs uppercase font-bold tracking-wider">เข้าสู่ระบบ (SIGN IN)</button>
+                    <input id="pass-code" type="password" placeholder="••••••••••••" class="w-full bg-[#0c061a] border border-purple-900/60 rounded-xl p-3.5 text-center text-purple-300 font-mono tracking-widest outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+                    <button onclick="login()" class="w-full btn-neon-purple py-3.5 rounded-xl text-xs uppercase tracking-widest font-bold">LOGIN NOW</button>
                 </div>
             </div>
         </div>
 
         <!-- 2. RESELLER PANEL SELECTOR -->
-        <div id="selector-screen" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[#080a12]/95 backdrop-blur-2xl hidden">
-            <div class="nabee-card p-8 max-w-2xl w-full rounded-3xl space-y-6 border border-purple-500/20">
-                <div class="flex justify-between items-center border-b border-slate-800/80 pb-5">
-                    <div>
-                        <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-shop text-purple-400"></i> เลือกแผงร้านค้าของคุณ</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">เลือกแผง Reseller ที่ครอบครองเพื่อเริ่มทำรายการ</p>
-                    </div>
-                    <button onclick="logout()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1.5 font-bold"><i class="fa-solid fa-power-off"></i> ออกจากระบบ</button>
+        <div id="selector-screen" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[#05020a]/95 backdrop-blur-xl hidden">
+            <div class="glass-card p-6 max-w-2xl w-full rounded-3xl space-y-5">
+                <div class="flex justify-between items-center border-b border-purple-900/40 pb-4">
+                    <h3 class="text-white font-bold text-base flex items-center gap-2"><i class="fa-solid fa-store text-purple-400"></i> เลือกแผง Reseller ที่ต้องการเข้าใช้งาน</h3>
+                    <button onclick="logout()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-semibold"><i class="fa-solid fa-power-off"></i> ออกจากระบบ</button>
                 </div>
                 <div id="panel-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-1"></div>
             </div>
         </div>
 
+        <!-- MOBILE BACKDROP OVERLAY -->
+        <div id="sidebar-overlay" onclick="toggleMobileSidebar(false)" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-30 hidden md:hidden"></div>
+
         <!-- 3. MAIN DASHBOARD HUB -->
         <div id="dashboard-screen" class="flex w-full h-screen overflow-hidden hidden z-10">
+            
             <!-- SIDEBAR -->
-            <aside class="w-64 border-r border-slate-800/80 p-5 flex flex-col justify-between shrink-0 bg-[#0b0e1a]/90 backdrop-blur-xl">
-                <div class="space-y-7">
-                    <!-- BRAND LOGO -->
-                    <div class="flex items-center gap-3 px-2">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold shadow-lg shadow-purple-500/25">
-                            <i class="fa-solid fa-shield-halved text-lg"></i>
+            <aside id="main-sidebar" class="fixed md:static inset-y-0 left-0 z-40 w-64 border-r border-purple-900/30 p-4 flex flex-col justify-between shrink-0 bg-[#0a0518] backdrop-blur-xl transform -translate-x-full md:translate-x-0 transition-all duration-300 ease-in-out h-full overflow-y-auto pb-12 md:pb-4">
+                <div class="space-y-6">
+                    <!-- BRAND HEADER -->
+                    <div class="flex items-center justify-between px-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-500 to-pink-500 text-white flex items-center justify-center font-extrabold shadow-lg shadow-purple-500/40 shrink-0">
+                                <i class="fa-solid fa-cube text-xl"></i>
+                            </div>
+                            <div class="sidebar-text">
+                                <span class="text-white font-extrabold text-lg tracking-wider block leading-none neon-text-purple">RP MODS</span>
+                                <span class="text-[10px] text-purple-400 font-mono tracking-widest">NEON VIOLET</span>
+                            </div>
                         </div>
-                        <div>
-                            <span class="font-space text-white font-bold text-lg tracking-wide block leading-none">NABEE</span>
-                            <span class="text-[10px] text-purple-400 font-mono tracking-wider">OFFICIAL STORE</span>
-                        </div>
+                        <button onclick="toggleMobileSidebar(false)" class="md:hidden text-purple-400 hover:text-white p-2">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
                     </div>
 
-                    <!-- ACTIVE USER BADGE -->
-                    <div class="nabee-card p-3.5 rounded-2xl flex items-center gap-3 border border-slate-800/80">
-                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400"></div>
+                    <!-- USER BADGE -->
+                    <div class="bg-[#120926] border border-purple-900/40 p-3 rounded-2xl flex items-center gap-3 sidebar-hide-on-collapse">
+                        <div class="relative shrink-0">
+                            <div class="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]"></div>
+                            <div class="w-3 h-3 rounded-full bg-emerald-400 absolute inset-0 animate-ping opacity-75"></div>
+                        </div>
                         <div class="overflow-hidden">
-                            <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono">NODE ACTIVE</div>
+                            <div class="text-[9px] text-purple-400 font-bold uppercase tracking-wider">ACTIVE NODE</div>
                             <div id="active-panel-name" class="text-xs font-bold text-white truncate">ADMIN</div>
                             <div id="panel-expire-badge" class="text-[10px] text-amber-400 font-mono mt-0.5"></div>
                         </div>
@@ -371,132 +388,144 @@ app.get('/', (req, res) => {
                     <!-- NAVIGATION -->
                     <nav class="space-y-5">
                         <div>
-                            <div class="text-[10px] font-bold text-slate-500 px-3 mb-2 tracking-wider uppercase font-mono">เมนูหลัก</div>
+                            <div class="text-[10px] font-bold text-purple-400/60 px-3 mb-2 tracking-widest uppercase sidebar-text">Overview</div>
                             <div class="space-y-1">
-                                <div id="nav-dashboard" onclick="switchTab('dashboard')" class="sidebar-item active"><i class="fa-solid fa-chart-pie w-5"></i> หน้าแรก (Dashboard)</div>
-                                <div id="nav-keys" onclick="switchTab('keys')" class="sidebar-item"><i class="fa-solid fa-key w-5"></i> จัดการคีย์ (Licenses) <span id="nav-key-count" class="ml-auto text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-purple-400 font-mono">0</span></div>
-                                <div id="nav-generator" onclick="switchTab('generator')" class="sidebar-item"><i class="fa-solid fa-plus-circle w-5"></i> สร้างคีย์ใหม่</div>
+                                <div id="nav-dashboard" onclick="switchTab('dashboard')" class="sidebar-item active" title="Live Dashboard"><i class="fa-solid fa-chart-line w-5 text-center text-purple-300"></i> <span class="sidebar-text">Live Dashboard</span></div>
+                                <div id="nav-keys" onclick="switchTab('keys')" class="sidebar-item" title="License Keys"><i class="fa-solid fa-key w-5 text-center text-purple-300"></i> <span class="sidebar-text">License Keys</span> <span id="nav-key-count" class="sidebar-text ml-auto text-[10px] bg-purple-950/80 border border-purple-800/50 px-2 py-0.5 rounded-full text-purple-300 font-mono">0</span></div>
+                                <div id="nav-generator" onclick="switchTab('generator')" class="sidebar-item" title="Key Generator"><i class="fa-solid fa-wand-magic-sparkles w-5 text-center text-purple-300"></i> <span class="sidebar-text">Key Generator</span></div>
                             </div>
                         </div>
 
                         <div>
-                            <div class="text-[10px] font-bold text-slate-500 px-3 mb-2 tracking-wider uppercase font-mono">ระบบ & ประวัติ</div>
+                            <div class="text-[10px] font-bold text-purple-400/60 px-3 mb-2 tracking-widest uppercase sidebar-text">Management</div>
                             <div class="space-y-1">
-                                <div id="nav-export" onclick="switchTab('export')" class="sidebar-item"><i class="fa-solid fa-file-arrow-down w-5"></i> ส่งออกข้อมูล (Export)</div>
-                                <div id="nav-logs" onclick="switchTab('logs')" class="sidebar-item"><i class="fa-solid fa-clock-rotate-left w-5"></i> ประวัติทำรายการ</div>
+                                <div id="nav-export" onclick="switchTab('export')" class="sidebar-item" title="Export Data"><i class="fa-solid fa-file-export w-5 text-center text-purple-300"></i> <span class="sidebar-text">Export Data</span></div>
+                                <div id="nav-logs" onclick="switchTab('logs')" class="sidebar-item" title="Audit Logs"><i class="fa-solid fa-shield-halved w-5 text-center text-purple-300"></i> <span class="sidebar-text">Audit Logs</span></div>
                             </div>
                         </div>
                     </nav>
                 </div>
 
-                <button onclick="logout()" class="btn-nabee-secondary p-3 rounded-xl flex items-center justify-center gap-2 text-rose-400 hover:text-rose-300 hover:border-rose-500/30 text-xs font-bold transition-all">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                    <span>ออกจากระบบ</span>
+                <button onclick="logout()" class="glass-card p-3 mt-6 rounded-2xl flex items-center justify-between hover:border-rose-500/50 group transition-all shrink-0">
+                    <div class="flex items-center gap-2.5 mx-auto md:mx-0">
+                        <i class="fa-solid fa-arrow-right-from-bracket text-rose-400 group-hover:translate-x-1 transition-transform"></i>
+                        <span class="text-xs text-slate-300 font-bold group-hover:text-rose-400 sidebar-text">Exit System</span>
+                    </div>
                 </button>
             </aside>
 
-            <!-- MAIN CONTENT AREA -->
-            <main class="flex-1 p-8 space-y-6 overflow-y-auto h-full">
-                <!-- TOP HEADER BAR -->
-                <header class="flex justify-between items-center pb-5 border-b border-slate-800/80">
-                    <div>
-                        <h1 id="page-title" class="text-xl font-bold text-white tracking-wide flex items-center gap-2.5"><i class="fa-solid fa-store text-purple-400"></i> แผงควบคุมระบบ (STORE DASHBOARD)</h1>
-                        <p class="text-xs text-slate-400 mt-1">ยินดีต้อนรับสู่ระบบจัดการคีย์และบริการของ NABEE PROXIES</p>
+            <!-- MAIN CONTENT CONTAINER -->
+            <main class="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto h-full pb-20 md:pb-8">
+                
+                <!-- TOP HEADER -->
+                <header class="flex justify-between items-center pb-5 border-b border-purple-900/30 gap-3">
+                    <div class="flex items-center gap-3">
+                        <!-- TOGGLE DESKTOP SIDEBAR BUTTON -->
+                        <button onclick="toggleDesktopSidebar()" class="hidden md:flex bg-[#120926] border border-purple-800/40 text-purple-300 p-2.5 rounded-xl hover:border-purple-500 transition-all shadow-lg shadow-purple-950/50">
+                            <i class="fa-solid fa-bars-staggered text-lg"></i>
+                        </button>
+                        <!-- TOGGLE MOBILE SIDEBAR BUTTON -->
+                        <button onclick="toggleMobileSidebar(true)" class="md:hidden bg-[#120926] border border-purple-800/40 text-purple-300 p-2.5 rounded-xl hover:border-purple-500">
+                            <i class="fa-solid fa-bars text-lg"></i>
+                        </button>
+
+                        <div>
+                            <h1 id="page-title" class="text-lg md:text-xl font-extrabold text-white flex items-center gap-2 tracking-wide neon-text-purple">RP MODS Hub</h1>
+                            <p class="text-[11px] md:text-xs text-purple-300/60 mt-0.5 hidden sm:block">Next-Generation License Security & Authentication Platform</p>
+                        </div>
                     </div>
 
-                    <div class="flex items-center gap-3">
-                        <button onclick="openKeyModal()" class="btn-nabee-primary px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 font-bold">
-                            <i class="fa-solid fa-plus"></i> สร้างคีย์ด่วน
+                    <div class="flex items-center gap-2 md:gap-3">
+                        <div class="glass-card px-3 py-2 rounded-xl hidden sm:flex items-center gap-2 text-xs border-purple-800/30">
+                            <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse shadow-[0_0_8px_#c084fc]"></span>
+                            <span class="text-purple-200 font-mono text-[11px]">System Online</span>
+                        </div>
+                        <button onclick="openKeyModal()" class="btn-neon-purple px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 whitespace-nowrap">
+                            <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Generate</span> License
                         </button>
                     </div>
                 </header>
 
-                <!-- TAB 1: LIVE DASHBOARD -->
+                <!-- TAB 1: DASHBOARD -->
                 <div id="tab-dashboard" class="tab-view active space-y-6">
-                    <!-- Quick Actions Banner -->
-                    <div class="nabee-card p-5 rounded-2xl flex items-center justify-between border-l-4 border-l-purple-500">
-                        <div class="flex items-center gap-3 text-xs font-bold text-slate-200">
-                            <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg"><i class="fa-solid fa-bolt"></i></div>
-                            <div>
-                                <div class="text-sm">สร้างคีย์ด่วนแบบรวดเร็ว</div>
-                                <div class="text-slate-400 text-[11px] font-normal">คลิกสร้างคีย์ทดลองหรือคีย์ VIP ได้ทันทีในปุ่มเดียว</div>
-                            </div>
+                    <div class="glass-card p-4 rounded-2xl flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between border-l-4 border-l-purple-400">
+                        <div class="flex items-center gap-3 text-xs font-semibold text-purple-200">
+                            <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-300 flex items-center justify-center shrink-0 border border-purple-500/20"><i class="fa-solid fa-bolt text-sm"></i></div>
+                            <span>สร้างคีย์ด่วน (Quick Key Gen)</span>
                         </div>
-                        <div class="flex gap-2.5">
-                            <button onclick="quickGenerate(1)" class="btn-nabee-secondary px-4 py-2 rounded-xl text-xs font-bold transition-all">
-                                +1 วัน (Trial)
+                        <div class="flex gap-2">
+                            <button onclick="quickGenerate(1)" class="flex-1 sm:flex-none bg-purple-950/60 hover:bg-purple-900/80 text-purple-200 border border-purple-500/40 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                                +1 Day Trial
                             </button>
-                            <button onclick="quickGenerate(30)" class="btn-nabee-primary px-4 py-2 rounded-xl text-xs font-bold transition-all">
-                                +30 วัน (VIP)
+                            <button onclick="quickGenerate(30)" class="flex-1 sm:flex-none bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white border border-pink-400/40 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+                                +30 Days VIP
                             </button>
                         </div>
                     </div>
 
-                    <!-- STATS CARDS GRID -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="nabee-card nabee-card-hover p-5 rounded-2xl space-y-3">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                        <div class="glass-card glass-card-hover p-4 md:p-5 rounded-2xl space-y-2 md:space-y-3">
                             <div class="flex justify-between items-center">
-                                <span class="text-[11px] font-bold text-slate-400 uppercase font-mono">คีย์ทั้งหมด</span>
-                                <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center text-sm"><i class="fa-solid fa-box-archive"></i></div>
+                                <span class="text-[10px] md:text-[11px] font-bold text-purple-300/60 uppercase tracking-widest">TOTAL LICENSES</span>
+                                <div class="w-7 h-7 md:w-9 md:h-9 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center text-xs md:text-sm border border-purple-500/30"><i class="fa-solid fa-database"></i></div>
                             </div>
-                            <div id="stat-total" class="text-2xl font-bold font-space text-white">0</div>
+                            <div id="stat-total" class="text-2xl md:text-3xl font-extrabold text-white font-mono neon-text-purple">0</div>
+                            <div class="w-full bg-purple-950/60 h-1.5 rounded-full overflow-hidden"><div class="bg-purple-400 h-full w-full"></div></div>
                         </div>
 
-                        <div class="nabee-card nabee-card-hover p-5 rounded-2xl space-y-3">
+                        <div class="glass-card glass-card-hover p-4 md:p-5 rounded-2xl space-y-2 md:space-y-3">
                             <div class="flex justify-between items-center">
-                                <span class="text-[11px] font-bold text-slate-400 uppercase font-mono">ใช้งานได้ (ACTIVE)</span>
-                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm"><i class="fa-solid fa-circle-check"></i></div>
+                                <span class="text-[10px] md:text-[11px] font-bold text-purple-300/60 uppercase tracking-widest">ACTIVE KEYS</span>
+                                <div class="w-7 h-7 md:w-9 md:h-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xs md:text-sm border border-emerald-500/30"><i class="fa-solid fa-circle-check"></i></div>
                             </div>
-                            <div id="stat-active" class="text-2xl font-bold font-space text-emerald-400">0</div>
+                            <div id="stat-active" class="text-2xl md:text-3xl font-extrabold text-emerald-400 font-mono">0</div>
+                            <div class="w-full bg-purple-950/60 h-1.5 rounded-full overflow-hidden"><div class="bg-emerald-400 h-full w-full"></div></div>
                         </div>
 
-                        <div class="nabee-card nabee-card-hover p-5 rounded-2xl space-y-3">
+                        <div class="glass-card glass-card-hover p-4 md:p-5 rounded-2xl space-y-2 md:space-y-3">
                             <div class="flex justify-between items-center">
-                                <span class="text-[11px] font-bold text-slate-400 uppercase font-mono">หมดอายุแล้ว</span>
-                                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                                <span class="text-[10px] md:text-[11px] font-bold text-purple-300/60 uppercase tracking-widest">EXPIRED</span>
+                                <div class="w-7 h-7 md:w-9 md:h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center text-xs md:text-sm border border-amber-500/30"><i class="fa-solid fa-clock-rotate-left"></i></div>
                             </div>
-                            <div id="stat-expired" class="text-2xl font-bold font-space text-amber-400">0</div>
+                            <div id="stat-expired" class="text-2xl md:text-3xl font-extrabold text-amber-400 font-mono">0</div>
+                            <div class="w-full bg-purple-950/60 h-1.5 rounded-full overflow-hidden"><div class="bg-amber-400 h-full w-1/4"></div></div>
                         </div>
 
-                        <div class="nabee-card nabee-card-hover p-5 rounded-2xl space-y-3">
+                        <div class="glass-card glass-card-hover p-4 md:p-5 rounded-2xl space-y-2 md:space-y-3">
                             <div class="flex justify-between items-center">
-                                <span class="text-[11px] font-bold text-slate-400 uppercase font-mono">ถูกระงับ (BANNED)</span>
-                                <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center text-sm"><i class="fa-solid fa-ban"></i></div>
+                                <span class="text-[10px] md:text-[11px] font-bold text-purple-300/60 uppercase tracking-widest">BANNED</span>
+                                <div class="w-7 h-7 md:w-9 md:h-9 rounded-xl bg-rose-500/20 text-rose-300 flex items-center justify-center text-xs md:text-sm border border-rose-500/30"><i class="fa-solid fa-ban"></i></div>
                             </div>
-                            <div id="stat-banned" class="text-2xl font-bold font-space text-rose-500">0</div>
+                            <div id="stat-banned" class="text-2xl md:text-3xl font-extrabold text-rose-500 font-mono">0</div>
+                            <div class="w-full bg-purple-950/60 h-1.5 rounded-full overflow-hidden"><div class="bg-rose-500 h-full w-0"></div></div>
                         </div>
                     </div>
 
-                    <!-- ADMIN SECTION: RESELLER MANAGER -->
-                    <section id="admin-panel-section" class="nabee-card p-6 rounded-2xl space-y-4 hidden border border-purple-500/30">
-                        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-                            <div>
-                                <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-users-gear text-purple-400"></i> จัดการแผงร้านค้า Reseller ( ADMIN ONLY )</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">สร้าง ต่ออายุ หรือลบแผงลูกค้ารายย่อย</p>
-                            </div>
-                            <button onclick="openPanelModal()" class="btn-nabee-primary px-3.5 py-2 rounded-xl text-xs font-bold">+ เพิ่มแผงใหม่</button>
+                    <section id="admin-panel-section" class="glass-card p-4 md:p-6 rounded-2xl space-y-4 hidden">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-purple-900/30">
+                            <h3 class="font-bold text-white text-sm flex items-center gap-2"><i class="fa-solid fa-users-gear text-purple-400"></i> จัดการแผง Reseller (เฉพาะ Admin)</h3>
+                            <button onclick="openPanelModal()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-[0_0_15px_rgba(147,51,234,0.4)]">+ สร้างแผงใหม่</button>
                         </div>
-                        <div id="admin-panel-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+                        <div id="admin-panel-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
                     </section>
 
-                    <!-- PREVIEW RECENT KEYS -->
-                    <section class="nabee-card p-6 rounded-2xl space-y-4">
-                        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-                            <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-list-check text-purple-400"></i> คีย์ที่สร้างล่าสุด</h3>
-                            <div class="text-xs text-slate-400 font-mono">โควตาคงเหลือ: <span id="stat-quota" class="text-purple-400 font-bold">0 / ∞</span></div>
+                    <section class="glass-card p-4 md:p-6 rounded-2xl space-y-4">
+                        <div class="flex justify-between items-center pb-3 border-b border-purple-900/30">
+                            <h3 class="font-bold text-white text-sm flex items-center gap-2"><i class="fa-solid fa-list-check text-purple-400"></i> Recent Keys Created</h3>
+                            <div class="text-xs text-purple-300/60 font-mono">Quota: <span id="stat-quota" class="text-purple-300 font-bold">0 / ∞</span></div>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs font-mono">
-                                <thead class="text-slate-500 uppercase font-semibold border-b border-slate-800">
+                            <table class="w-full text-left text-xs font-mono min-w-[500px]">
+                                <thead class="text-purple-300/50 uppercase font-semibold border-b border-purple-900/30">
                                     <tr>
                                         <th class="p-3">LICENSE KEY</th>
-                                        <th class="p-3">ระยะเวลา</th>
-                                        <th class="p-3">เจ้าของแผง</th>
-                                        <th class="p-3">สถานะ HWID</th>
-                                        <th class="p-3 text-center">จัดการ</th>
+                                        <th class="p-3">DURATION</th>
+                                        <th class="p-3">OWNER</th>
+                                        <th class="p-3">HWID STATUS</th>
+                                        <th class="p-3 text-center">ACTIONS</th>
                                     </tr>
                                 </thead>
-                                <tbody id="dashboard-keys-body" class="divide-y divide-slate-800/50"></tbody>
+                                <tbody id="dashboard-keys-body" class="divide-y divide-purple-900/20"></tbody>
                             </table>
                         </div>
                     </section>
@@ -504,30 +533,30 @@ app.get('/', (req, res) => {
 
                 <!-- TAB 2: KEY MANAGER -->
                 <div id="tab-keys" class="tab-view space-y-4">
-                    <div class="nabee-card p-4 rounded-2xl flex flex-col md:flex-row justify-between gap-4 items-center">
-                        <div class="relative w-full md:w-96">
-                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-500"></i>
-                            <input id="key-search" oninput="renderKeyManager()" type="text" placeholder="ค้นหาตาม Key / HWID / เจ้าของ..." class="w-full bg-[#0d111d] border border-slate-800 rounded-xl pl-11 pr-4 py-2.5 text-xs text-white outline-none focus:border-purple-500 transition-all font-mono">
+                    <div class="glass-card p-4 rounded-2xl flex flex-col md:flex-row justify-between gap-3 items-center">
+                        <div class="relative w-full md:w-80">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-purple-400/60"></i>
+                            <input id="key-search" oninput="renderKeyManager()" type="text" placeholder="ค้นหา Key / HWID..." class="w-full bg-[#0c061a] border border-purple-900/60 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white outline-none focus:border-purple-500">
                         </div>
-                        <button onclick="refreshData()" class="btn-nabee-secondary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
-                            <i class="fa-solid fa-rotate"></i> อัปเดตข้อมูล
+                        <button onclick="refreshData()" class="w-full md:w-auto bg-purple-950/80 hover:bg-purple-900 text-purple-200 border border-purple-800/40 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-rotate"></i> รีเฟรชข้อมูล
                         </button>
                     </div>
 
-                    <div class="nabee-card p-6 rounded-2xl">
+                    <div class="glass-card p-4 md:p-6 rounded-2xl">
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs font-mono">
-                                <thead class="text-slate-500 uppercase font-semibold border-b border-slate-800">
+                            <table class="w-full text-left text-xs font-mono min-w-[600px]">
+                                <thead class="text-purple-300/50 uppercase font-semibold border-b border-purple-900/30">
                                     <tr>
                                         <th class="p-3">LICENSE KEY</th>
-                                        <th class="p-3">ระยะเวลา</th>
-                                        <th class="p-3">วันที่สร้าง</th>
-                                        <th class="p-3">เจ้าของแผง</th>
-                                        <th class="p-3">สถานะ HWID</th>
-                                        <th class="p-3 text-center">จัดการ</th>
+                                        <th class="p-3">DURATION</th>
+                                        <th class="p-3">CREATED AT</th>
+                                        <th class="p-3">OWNER</th>
+                                        <th class="p-3">HWID STATUS</th>
+                                        <th class="p-3 text-center">ACTIONS</th>
                                     </tr>
                                 </thead>
-                                <tbody id="manager-keys-body" class="divide-y divide-slate-800/50"></tbody>
+                                <tbody id="manager-keys-body" class="divide-y divide-purple-900/20"></tbody>
                             </table>
                         </div>
                     </div>
@@ -535,67 +564,73 @@ app.get('/', (req, res) => {
 
                 <!-- TAB 3: GENERATOR HUB -->
                 <div id="tab-generator" class="tab-view space-y-4">
-                    <div class="nabee-card p-8 max-w-md mx-auto rounded-3xl space-y-5 border border-purple-500/20">
-                        <div class="border-b border-slate-800 pb-3">
-                            <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> ออก License Key ใหม่</h3>
-                            <p class="text-xs text-slate-400 mt-1">เลือกคำนำหน้า ระยะเวลาวัน และจำนวนคีย์</p>
+                    <div class="glass-card p-6 md:p-8 max-w-lg mx-auto rounded-3xl space-y-6 border-purple-500/30">
+                        <div class="border-b border-purple-900/30 pb-4">
+                            <h3 class="text-white font-extrabold text-base flex items-center gap-2 neon-text-purple"><i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> Key Generator Hub</h3>
+                            <p class="text-xs text-purple-300/60 mt-1">ออกรหัส License Key ใหม่ตามเงื่อนไขสิทธิ์ของคุณ</p>
                         </div>
                         <div class="space-y-4 text-xs">
                             <div>
-                                <label class="text-slate-300 block mb-1.5 font-semibold">คำนำหน้า Key (Prefix)</label>
-                                <input id="gen-prefix" type="text" placeholder="NABEE" class="w-full bg-[#0d111d] border border-slate-800 p-3 rounded-xl text-purple-300 font-mono outline-none focus:border-purple-500">
+                                <label class="text-purple-200 block mb-1.5 font-bold">Key Prefix (คำนำหน้า)</label>
+                                <input id="gen-prefix" type="text" placeholder="RPMODS" class="w-full bg-[#0c061a] border border-purple-900/60 p-3.5 rounded-xl text-purple-300 font-mono outline-none focus:border-purple-500">
                             </div>
                             <div>
-                                <label class="text-slate-300 block mb-1.5 font-semibold">ระยะเวลาการใช้งาน (วัน)</label>
+                                <label class="text-purple-200 block mb-1.5 font-bold">ระยะเวลา (Duration)</label>
                                 <div id="gen-days-container"></div>
                             </div>
                             <div>
-                                <label class="text-slate-300 block mb-1.5 font-semibold">จำนวนคีย์ที่ต้องการสร้าง</label>
-                                <input id="gen-count" type="number" value="1" min="1" max="50" class="w-full bg-[#0d111d] border border-slate-800 p-3 rounded-xl text-white font-mono outline-none focus:border-purple-500">
+                                <label class="text-purple-200 block mb-1.5 font-bold">จำนวนที่ต้องการสร้าง (Quantity)</label>
+                                <input id="gen-count" type="number" value="1" min="1" max="50" class="w-full bg-[#0c061a] border border-purple-900/60 p-3.5 rounded-xl text-white font-mono outline-none focus:border-purple-500">
                             </div>
-                            <button onclick="submitGenHub()" class="w-full btn-nabee-primary py-3.5 rounded-xl text-xs uppercase font-bold tracking-wider mt-2">ยืนยันสร้าง Key</button>
+                            <button onclick="submitGenHub()" class="w-full btn-neon-purple py-3.5 rounded-xl text-xs uppercase tracking-widest font-bold mt-2">ยืนยันสร้าง Key</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- TAB 4: EXPORT -->
                 <div id="tab-export" class="tab-view space-y-4">
-                    <div class="nabee-card p-8 max-w-md mx-auto rounded-3xl space-y-5 border border-purple-500/20 text-center">
-                        <div class="border-b border-slate-800 pb-3">
-                            <h3 class="font-bold text-white text-base flex items-center justify-center gap-2"><i class="fa-solid fa-file-arrow-down text-purple-400"></i> ส่งออกข้อมูล Key (EXPORT)</h3>
-                            <p class="text-xs text-slate-400 mt-1">ดาวน์โหลดข้อมูลรายการคีย์ออกมาเป็นไฟล์สำรอง</p>
+                    <div class="glass-card p-6 md:p-8 max-w-lg mx-auto rounded-3xl space-y-6">
+                        <div class="border-b border-purple-900/30 pb-4">
+                            <h3 class="text-white font-extrabold text-base flex items-center gap-2 neon-text-purple"><i class="fa-solid fa-file-export text-purple-400"></i> Export License Data</h3>
+                            <p class="text-xs text-purple-300/60 mt-1">ดาวน์โหลดข้อมูล Key ทั้งหมดออกมาเป็นไฟล์</p>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 pt-2">
-                            <button onclick="exportData('txt')" class="nabee-card nabee-card-hover p-5 rounded-2xl flex flex-col items-center gap-2">
-                                <i class="fa-solid fa-file-lines text-3xl text-purple-400"></i>
-                                <span class="text-white font-bold text-xs">ไฟล์ .TXT</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button onclick="exportData('txt')" class="glass-card glass-card-hover p-6 rounded-2xl flex flex-col items-center gap-3 text-center border-purple-800/30">
+                                <i class="fa-solid fa-file-lines text-4xl text-purple-400"></i>
+                                <div>
+                                    <div class="text-white font-bold text-xs">Export .TXT</div>
+                                    <div class="text-[10px] text-purple-300/50 mt-1">เรียงบรรทัดนำไปใช้ง่าย</div>
+                                </div>
                             </button>
-                            <button onclick="exportData('csv')" class="nabee-card nabee-card-hover p-5 rounded-2xl flex flex-col items-center gap-2">
-                                <i class="fa-solid fa-file-csv text-3xl text-emerald-400"></i>
-                                <span class="text-white font-bold text-xs">ไฟล์ .CSV</span>
+                            <button onclick="exportData('csv')" class="glass-card glass-card-hover p-6 rounded-2xl flex flex-col items-center gap-3 text-center border-purple-800/30">
+                                <i class="fa-solid fa-file-csv text-4xl text-pink-400"></i>
+                                <div>
+                                    <div class="text-white font-bold text-xs">Export .CSV</div>
+                                    <div class="text-[10px] text-purple-300/50 mt-1">ตารางเปิดใน Excel</div>
+                                </div>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 5: AUDIT LOGS -->
+                <!-- TAB 5: LOGS -->
                 <div id="tab-logs" class="tab-view space-y-4">
-                    <div class="nabee-card p-6 rounded-2xl space-y-4">
-                        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-                            <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-purple-400"></i> ประวัติการทำรายการในระบบ</h3>
-                            <button onclick="loadLogs()" class="text-xs text-purple-400 hover:underline font-mono"><i class="fa-solid fa-rotate"></i> รีเฟรชประวัติ</button>
+                    <div class="glass-card p-4 md:p-6 rounded-2xl space-y-4">
+                        <div class="flex justify-between items-center pb-3 border-b border-purple-900/30">
+                            <h3 class="font-bold text-white text-sm flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-purple-400"></i> Activity Audit Log</h3>
+                            <button onclick="loadLogs()" class="text-xs text-purple-300 hover:underline"><i class="fa-solid fa-rotate"></i> โหลดประวัติใหม่</button>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs font-mono">
-                                <thead class="text-slate-500 uppercase font-semibold border-b border-slate-800">
+                            <table class="w-full text-left text-xs font-mono min-w-[500px]">
+                                <thead class="text-purple-300/50 uppercase font-semibold border-b border-purple-900/30">
                                     <tr>
-                                        <th class="p-3">เวลาทำรายการ</th>
-                                        <th class="p-3">ผู้ใช้งาน</th>
-                                        <th class="p-3">การกระทำ</th>
-                                        <th class="p-3">รายละเอียด</th>
+                                        <th class="p-3">TIMESTAMP</th>
+                                        <th class="p-3">USER/PANEL</th>
+                                        <th class="p-3">ACTION</th>
+                                        <th class="p-3">DETAILS</th>
                                     </tr>
                                 </thead>
-                                <tbody id="logs-table-body" class="divide-y divide-slate-800/50"></tbody>
+                                <tbody id="logs-table-body" class="divide-y divide-purple-900/20"></tbody>
                             </table>
                         </div>
                     </div>
@@ -603,48 +638,48 @@ app.get('/', (req, res) => {
             </main>
         </div>
 
-        <!-- MODAL: GENERATE KEY -->
+        <!-- MODAL GENERATE KEY -->
         <div id="modal-key" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
-            <div class="nabee-card p-7 max-w-md w-full rounded-3xl space-y-5 border border-purple-500/30">
-                <h3 class="text-white font-bold text-base border-b border-slate-800 pb-3">สร้าง License Key ด่วน</h3>
-                <div class="space-y-4 text-xs">
+            <div class="glass-card p-6 max-w-md w-full rounded-3xl space-y-4 border-purple-500/40">
+                <h3 class="text-white font-bold text-sm border-b border-purple-900/30 pb-3">Generate License Keys</h3>
+                <div class="space-y-3 text-xs">
                     <div>
-                        <label class="text-slate-400 block mb-1">Prefix คำนำหน้า</label>
-                        <input id="key-prefix" type="text" placeholder="NABEE" class="w-full bg-[#0d111d] border border-slate-800 p-3 rounded-xl text-purple-300 font-mono outline-none">
+                        <label class="text-purple-200 block mb-1 font-semibold">Key Prefix</label>
+                        <input id="key-prefix" type="text" placeholder="RPMODS" class="w-full bg-[#0c061a] border border-purple-900/60 p-3 rounded-xl text-purple-300 font-mono outline-none">
                     </div>
                     <div>
-                        <label class="text-slate-400 block mb-1">จำนวนวันใช้งาน</label>
+                        <label class="text-purple-200 block mb-1 font-semibold">Duration (Days)</label>
                         <div id="modal-days-container"></div>
                     </div>
                     <div>
-                        <label class="text-slate-400 block mb-1">จำนวนคีย์ที่ต้องการ</label>
-                        <input id="key-count" type="number" value="1" min="1" max="50" class="w-full bg-[#0d111d] border border-slate-800 p-3 rounded-xl text-white font-mono outline-none">
+                        <label class="text-purple-200 block mb-1 font-semibold">Quantity</label>
+                        <input id="key-count" type="number" value="1" min="1" max="50" class="w-full bg-[#0c061a] border border-purple-900/60 p-3 rounded-xl text-white font-mono outline-none">
                     </div>
                 </div>
-                <div class="flex gap-2.5 pt-2">
-                    <button onclick="submitGenerateKey()" class="flex-1 btn-nabee-primary py-3 rounded-xl text-xs font-bold">ตกลงสร้าง คีย์</button>
-                    <button onclick="closeModal('modal-key')" class="btn-nabee-secondary px-5 py-3 rounded-xl text-xs font-bold">ยกเลิก</button>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="submitGenerateKey()" class="flex-1 btn-neon-purple py-3 rounded-xl text-xs font-bold">Confirm Generate</button>
+                    <button onclick="closeModal('modal-key')" class="bg-purple-950/60 text-purple-300 border border-purple-800/40 px-4 py-3 rounded-xl text-xs font-bold">Cancel</button>
                 </div>
             </div>
         </div>
 
-        <!-- MODAL: CREATE PANEL -->
+        <!-- MODAL CREATE PANEL -->
         <div id="modal-panel" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
-            <div class="nabee-card p-7 max-w-md w-full rounded-3xl space-y-5 border border-purple-500/30">
-                <h3 class="text-white font-bold text-base border-b border-slate-800 pb-3">เพิ่มแผง Reseller ใหม่</h3>
-                <div class="space-y-4 text-xs">
+            <div class="glass-card p-6 max-w-md w-full rounded-3xl space-y-4 border-purple-500/40">
+                <h3 class="text-white font-bold text-sm border-b border-purple-900/30 pb-3">Create New Reseller Panel</h3>
+                <div class="space-y-3 text-xs">
                     <div>
-                        <label class="text-slate-400 block mb-1">ชื่อแผง / ชื่อร้านค้า</label>
-                        <input id="panel-name" type="text" placeholder="Apex Key Store" class="w-full bg-[#0d111d] border border-slate-800 p-3 rounded-xl text-white outline-none">
+                        <label class="text-purple-200 block mb-1 font-semibold">Panel / Shop Name</label>
+                        <input id="panel-name" type="text" placeholder="Apex Key Store" class="w-full bg-[#0c061a] border border-purple-900/60 p-3 rounded-xl text-white outline-none">
                     </div>
                     <div>
-                        <label class="text-slate-400 block mb-1">อายุการใช้งานแผง (จำนวนวัน)</label>
-                        <input id="panel-expire-days" type="number" value="30" min="1" class="w-full bg-[#0d111d] border border-slate-800 p-3 rounded-xl text-white font-mono outline-none">
+                        <label class="text-purple-200 block mb-1 font-semibold">ระยะเวลาหมดอายุของแผง (จำนวนวัน)</label>
+                        <input id="panel-expire-days" type="number" value="30" min="1" class="w-full bg-[#0c061a] border border-purple-900/60 p-3 rounded-xl text-white font-mono outline-none">
                     </div>
                 </div>
-                <div class="flex gap-2.5 pt-2">
-                    <button onclick="submitCreatePanel()" class="flex-1 btn-nabee-primary py-3 rounded-xl text-xs font-bold">สร้างแผง</button>
-                    <button onclick="closeModal('modal-panel')" class="btn-nabee-secondary px-5 py-3 rounded-xl text-xs font-bold">ยกเลิก</button>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="submitCreatePanel()" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded-xl text-xs shadow-lg shadow-purple-600/40">Create Panel</button>
+                    <button onclick="closeModal('modal-panel')" class="bg-purple-950/60 text-purple-300 border border-purple-800/40 px-4 py-3 rounded-xl text-xs font-bold">Cancel</button>
                 </div>
             </div>
         </div>
@@ -653,7 +688,8 @@ app.get('/', (req, res) => {
             let userRole = localStorage.getItem('userRole') || null;
             let currentOwner = localStorage.getItem('currentOwner') || 'ADMIN';
             let mySessionId = localStorage.getItem('mySessionId');
-            
+            let isSidebarCollapsed = false;
+
             if (!mySessionId) {
                 mySessionId = 'sess-' + Math.random().toString(36).substring(2, 9);
                 localStorage.setItem('mySessionId', mySessionId);
@@ -661,11 +697,35 @@ app.get('/', (req, res) => {
 
             let loadedKeysData = [];
 
+            // DESKTOP SIDEBAR TOGGLE FUNCTION
+            function toggleDesktopSidebar() {
+                const sidebar = document.getElementById('main-sidebar');
+                isSidebarCollapsed = !isSidebarCollapsed;
+                if (isSidebarCollapsed) {
+                    sidebar.classList.add('sidebar-collapsed');
+                } else {
+                    sidebar.classList.remove('sidebar-collapsed');
+                }
+            }
+
+            // MOBILE SIDEBAR TOGGLE FUNCTION
+            function toggleMobileSidebar(open) {
+                const sidebar = document.getElementById('main-sidebar');
+                const overlay = document.getElementById('sidebar-overlay');
+                if (open) {
+                    sidebar.classList.remove('-translate-x-full');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden');
+                }
+            }
+
             function toast(msg, type = 'success') {
                 const box = document.getElementById('toast-box');
                 const el = document.createElement('div');
-                el.className = \`p-3.5 rounded-2xl border text-xs font-bold flex items-center gap-3 shadow-xl backdrop-blur-xl transition-all duration-300 \${
-                    type === 'error' ? 'bg-rose-950/90 border-rose-500/40 text-rose-200' : 'bg-slate-900/90 border-purple-500/40 text-purple-200'
+                el.className = \`p-3.5 rounded-2xl border text-xs font-bold flex items-center gap-2.5 shadow-2xl backdrop-blur-xl transition-all duration-300 transform translate-y-[-10px] \${
+                    type === 'error' ? 'bg-rose-950/90 border-rose-500/50 text-rose-200' : 'bg-[#150a2e]/90 border-purple-500/50 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
                 }\`;
                 el.innerHTML = \`<i class="fa-solid \${type === 'error' ? 'fa-triangle-exclamation text-rose-400' : 'fa-circle-check text-purple-400'} text-base"></i> \${msg}\`;
                 box.appendChild(el);
@@ -694,6 +754,8 @@ app.get('/', (req, res) => {
 
                 if (tabName === 'logs') loadLogs();
                 if (tabName === 'generator') updateGeneratorInputFields('gen-days-container', 'gen-days');
+
+                toggleMobileSidebar(false);
             }
 
             async function login() {
@@ -731,31 +793,31 @@ app.get('/', (req, res) => {
                 const panels = await res.json();
 
                 const list = document.getElementById('panel-list');
-                list.innerHTML = panels.length === 0 ? \`<div class="col-span-2 text-center text-slate-500 py-8 font-mono">ไม่มีแผงที่พร้อมใช้งาน</div>\` :
+                list.innerHTML = panels.length === 0 ? \`<div class="col-span-2 text-center text-purple-300/50 py-8">ไม่มีแผงให้บริการในขณะนี้</div>\` :
                 panels.map(p => {
                     const isExpired = p.expiresAt && new Date(p.expiresAt) < new Date();
                     const isTakenByOther = p.boundSessionId && p.boundSessionId !== mySessionId;
                     const isMyPanel = p.boundSessionId === mySessionId;
 
-                    let statusBadge = '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/30">🟢 พร้อมใช้งาน</span>';
-                    if (isExpired) statusBadge = '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 border border-rose-500/30">🔴 หมดอายุ</span>';
-                    else if (isMyPanel) statusBadge = '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-950 text-purple-400 border border-purple-500/30">👑 แผงของคุณ</span>';
-                    else if (isTakenByOther) statusBadge = '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-500/30">🔒 มีผู้ใช้อยู่</span>';
+                    let statusBadge = '<span class="text-[9px] font-bold px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/30">🟢 พร้อมใช้งาน</span>';
+                    if (isExpired) statusBadge = '<span class="text-[9px] font-bold px-2.5 py-1 rounded-full bg-rose-950 text-rose-400 border border-rose-500/30">🔴 หมดอายุ</span>';
+                    else if (isMyPanel) statusBadge = '<span class="text-[9px] font-bold px-2.5 py-1 rounded-full bg-purple-950 text-purple-300 border border-purple-500/30">👑 แผงของคุณ</span>';
+                    else if (isTakenByOther) statusBadge = '<span class="text-[9px] font-bold px-2.5 py-1 rounded-full bg-amber-950 text-amber-400 border border-amber-500/30">🔒 มีผู้ใช้ยึดอยู่</span>';
 
-                    const expDateStr = p.expiresAt ? new Date(p.expiresAt).toLocaleDateString('th-TH') : 'ไม่มี';
+                    const expDateStr = p.expiresAt ? new Date(p.expiresAt).toLocaleDateString('th-TH') : 'ไม่มีวันหมดอายุ';
 
                     return \`
-                        <div class="nabee-card p-5 rounded-2xl space-y-3.5 border border-slate-800 \${(isTakenByOther || isExpired) ? 'opacity-50' : ''}">
+                        <div class="glass-card p-5 rounded-2xl space-y-4 \${(isTakenByOther || isExpired) ? 'opacity-50' : ''}">
                             <div class="flex justify-between items-center">
                                 <span class="text-white font-bold text-sm">\${p.name}</span>
                                 \${statusBadge}
                             </div>
-                            <div class="text-xs text-slate-400 space-y-1 font-mono bg-[#0d111d] p-3 rounded-xl border border-slate-800">
-                                <div>โควตาคีย์: \${p.keysCreated} / \${p.keyQuota}</div>
-                                <div class="text-amber-400">วันหมดอายุ: \${expDateStr}</div>
+                            <div class="text-xs text-purple-300/70 space-y-1 font-mono bg-[#0c061a] p-3 rounded-xl border border-purple-900/40">
+                                <div>Quota: \${p.keysCreated} / \${p.keyQuota}</div>
+                                <div class="text-amber-400">หมดอายุ: \${expDateStr}</div>
                             </div>
-                            <button onclick="claimPanel('\${p.id}', '\${p.name}')" \${(isTakenByOther || isExpired) ? 'disabled' : ''} class="w-full \${(isTakenByOther || isExpired) ? 'bg-slate-800 text-slate-500' : 'btn-nabee-primary'} py-2.5 rounded-xl text-xs font-bold transition-all">
-                                \${isExpired ? 'หมดอายุ' : (isTakenByOther ? 'ถูกยึดโดยผู้อื่น' : (isMyPanel ? 'เข้าสู่แผงของคุณ' : 'เข้าใช้งานแผงนี้'))}
+                            <button onclick="claimPanel('\${p.id}', '\${p.name}')" \${(isTakenByOther || isExpired) ? 'disabled' : ''} class="w-full \${(isTakenByOther || isExpired) ? 'bg-purple-950 text-purple-500 border border-purple-900/30' : 'btn-neon-purple'} py-2.5 rounded-xl text-xs font-bold transition-all">
+                                \${isExpired ? 'แผงหมดอายุแล้ว' : (isTakenByOther ? 'ถูกยึดโดยผู้อื่น' : (isMyPanel ? 'เข้าสู่แผงของคุณ' : 'ยึดแผงนี้ใช้งาน'))}
                             </button>
                         </div>
                     \`;
@@ -814,7 +876,7 @@ app.get('/', (req, res) => {
 
                 if (stat.panelExpiresAt) {
                     const exp = new Date(stat.panelExpiresAt).toLocaleDateString('th-TH');
-                    document.getElementById('panel-expire-badge').innerText = \`หมดอายุ: \${exp}\`;
+                    document.getElementById('panel-expire-badge').innerText = \`Exp: \${exp}\`;
                 } else {
                     document.getElementById('panel-expire-badge').innerText = '';
                 }
@@ -829,21 +891,21 @@ app.get('/', (req, res) => {
                     const resPanels = await fetch('/api/panels');
                     const panels = await resPanels.json();
                     document.getElementById('admin-panel-list').innerHTML = panels.map(p => {
-                        const expStr = p.expiresAt ? new Date(p.expiresAt).toLocaleDateString('th-TH') : 'ไม่มี';
+                        const expStr = p.expiresAt ? new Date(p.expiresAt).toLocaleDateString('th-TH') : 'ไม่มีวันหมดอายุ';
                         return \`
-                        <div class="bg-[#0d111d] p-4 rounded-xl border border-slate-800 space-y-2.5">
+                        <div class="bg-[#0c061a] p-4 rounded-xl border border-purple-900/40 space-y-2">
                             <div class="flex justify-between items-center">
-                                <div class="text-white font-bold text-xs font-space">\${p.name}</div>
+                                <div class="text-white font-bold text-xs">\${p.name}</div>
                                 <button onclick="deletePanel('\${p.id}')" class="text-rose-400 text-xs hover:text-rose-300"><i class="fa-solid fa-trash"></i></button>
                             </div>
-                            <div class="text-[10px] text-slate-400 space-y-0.5 font-mono">
-                                <div>โควตา: \${p.keysCreated}/\${p.keyQuota}</div>
-                                <div>สถานะ: \${p.boundSessionId ? '🔴 มีผู้ยึดอยู่' : '🟢 ว่าง'}</div>
+                            <div class="text-[10px] text-purple-300/60 space-y-0.5 font-mono">
+                                <div>Quota: \${p.keysCreated}/\${p.keyQuota}</div>
+                                <div>ผู้ยึดแผง: \${p.boundSessionId ? '🔴 มีผู้ครอบครองแล้ว' : '🟢 ว่าง'}</div>
                                 <div class="text-amber-400">หมดอายุ: \${expStr}</div>
                             </div>
-                            <div class="pt-2 flex gap-2">
-                                <button onclick="extendPanel('\${p.id}', 7)" class="bg-slate-800 hover:bg-slate-700 text-[10px] text-purple-300 font-bold px-2.5 py-1 rounded-lg">+7 วัน</button>
-                                <button onclick="extendPanel('\${p.id}', 30)" class="bg-slate-800 hover:bg-slate-700 text-[10px] text-purple-300 font-bold px-2.5 py-1 rounded-lg">+30 วัน</button>
+                            <div class="pt-2 flex gap-1.5">
+                                <button onclick="extendPanel('\${p.id}', 7)" class="bg-purple-950 hover:bg-purple-900 border border-purple-800/40 text-[10px] text-purple-200 font-bold px-2.5 py-1 rounded-lg">+7 วัน</button>
+                                <button onclick="extendPanel('\${p.id}', 30)" class="bg-purple-950 hover:bg-purple-900 border border-purple-800/40 text-[10px] text-purple-200 font-bold px-2.5 py-1 rounded-lg">+30 วัน</button>
                             </div>
                         </div>
                     \`}).join('');
@@ -866,16 +928,16 @@ app.get('/', (req, res) => {
             function renderDashboardKeys() {
                 const keys = loadedKeysData.slice(0, 5);
                 document.getElementById('dashboard-keys-body').innerHTML = keys.length === 0 ? 
-                \`<tr><td colspan="5" class="p-4 text-center text-slate-600 font-mono">ไม่พบคีย์ในระบบ</td></tr>\` :
+                \`<tr><td colspan="5" class="p-4 text-center text-purple-300/40">No Key Found</td></tr>\` :
                 keys.map(k => \`
-                    <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="p-3 text-purple-400 font-bold font-mono">\${k.key}</td>
-                        <td class="p-3 text-slate-300">\${k.duration} วัน</td>
-                        <td class="p-3"><span class="px-2 py-0.5 bg-slate-800 text-[10px] rounded text-slate-300 border border-slate-700">\${k.owner}</span></td>
-                        <td class="p-3"><span class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] rounded border border-purple-500/20 font-mono">\${k.hwid}</span></td>
+                    <tr class="hover:bg-purple-950/30 transition-colors">
+                        <td class="p-3 text-purple-300 font-bold">\${k.key}</td>
+                        <td class="p-3 text-purple-100">\${k.duration} Days</td>
+                        <td class="p-3"><span class="px-2.5 py-1 bg-purple-950 border border-purple-800/40 text-[10px] rounded-lg text-purple-200">\${k.owner}</span></td>
+                        <td class="p-3"><span class="px-2.5 py-1 bg-pink-500/10 text-pink-300 text-[10px] rounded-lg border border-pink-500/20">\${k.hwid}</span></td>
                         <td class="p-3 text-center space-x-2">
-                            <button onclick="navigator.clipboard.writeText('\${k.key}'); toast('คัดลอกคีย์แล้ว!');" class="text-slate-400 hover:text-purple-400"><i class="fa-solid fa-copy"></i></button>
-                            <button onclick="deleteKey(\${k.id})" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="navigator.clipboard.writeText('\${k.key}'); toast('คัดลอกคีย์แล้ว!');" class="text-purple-400 hover:text-white"><i class="fa-solid fa-copy"></i></button>
+                            <button onclick="deleteKey(\${k.id})" class="text-purple-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 \`).join('');
@@ -883,20 +945,20 @@ app.get('/', (req, res) => {
 
             function renderKeyManager() {
                 const search = document.getElementById('key-search').value.toLowerCase();
-                const filtered = loadedKeysData.filter(k => k.key.toLowerCase().includes(search) || k.hwid.toLowerCase().includes(search) || k.owner.toLowerCase().includes(search));
+                const filtered = loadedKeysData.filter(k => k.key.toLowerCase().includes(search) || k.hwid.toLowerCase().includes(search));
 
                 document.getElementById('manager-keys-body').innerHTML = filtered.length === 0 ? 
-                \`<tr><td colspan="6" class="p-4 text-center text-slate-600 font-mono">ไม่พบข้อมูลที่ตรงกัน</td></tr>\` :
+                \`<tr><td colspan="6" class="p-4 text-center text-purple-300/40">No Matching Key Found</td></tr>\` :
                 filtered.map(k => \`
-                    <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="p-3 text-purple-400 font-bold font-mono">\${k.key}</td>
-                        <td class="p-3 text-slate-300">\${k.duration} วัน</td>
-                        <td class="p-3 text-slate-500 text-[10px]">\${k.createdAt || '-'}</td>
-                        <td class="p-3"><span class="px-2 py-0.5 bg-slate-800 text-[10px] rounded text-slate-300 border border-slate-700">\${k.owner}</span></td>
-                        <td class="p-3"><span class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] rounded border border-purple-500/20 font-mono">\${k.hwid}</span></td>
+                    <tr class="hover:bg-purple-950/30 transition-colors">
+                        <td class="p-3 text-purple-300 font-bold">\${k.key}</td>
+                        <td class="p-3 text-purple-100">\${k.duration} Days</td>
+                        <td class="p-3 text-purple-300/50 text-[10px]">\${k.createdAt || '-'}</td>
+                        <td class="p-3"><span class="px-2.5 py-1 bg-purple-950 border border-purple-800/40 text-[10px] rounded-lg text-purple-200">\${k.owner}</span></td>
+                        <td class="p-3"><span class="px-2.5 py-1 bg-pink-500/10 text-pink-300 text-[10px] rounded-lg border border-pink-500/20">\${k.hwid}</span></td>
                         <td class="p-3 text-center space-x-2">
-                            <button onclick="navigator.clipboard.writeText('\${k.key}'); toast('คัดลอกคีย์แล้ว!');" class="text-slate-400 hover:text-purple-400"><i class="fa-solid fa-copy"></i></button>
-                            <button onclick="deleteKey(\${k.id})" class="text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="navigator.clipboard.writeText('\${k.key}'); toast('คัดลอกคีย์แล้ว!');" class="text-purple-400 hover:text-white"><i class="fa-solid fa-copy"></i></button>
+                            <button onclick="deleteKey(\${k.id})" class="text-purple-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 \`).join('');
@@ -906,13 +968,13 @@ app.get('/', (req, res) => {
                 const res = await fetch(\`/api/logs?owner=\${currentOwner}\`);
                 const logs = await res.json();
                 document.getElementById('logs-table-body').innerHTML = logs.length === 0 ? 
-                \`<tr><td colspan="4" class="p-4 text-center text-slate-600 font-mono">ไม่มีประวัติการทำรายการ</td></tr>\` :
+                \`<tr><td colspan="4" class="p-4 text-center text-purple-300/40">No Logs Recorded</td></tr>\` :
                 logs.map(l => \`
-                    <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="p-3 text-slate-500 text-[10px] font-mono">\${l.timestamp}</td>
-                        <td class="p-3 font-bold text-slate-300">\${l.user}</td>
-                        <td class="p-3"><span class="px-2 py-0.5 bg-purple-950 text-purple-400 text-[10px] rounded border border-purple-800/50 font-mono">\${l.action}</span></td>
-                        <td class="p-3 text-slate-400 font-mono">\${l.detail}</td>
+                    <tr class="hover:bg-purple-950/30 transition-colors">
+                        <td class="p-3 text-purple-300/50 text-[10px]">\${l.timestamp}</td>
+                        <td class="p-3 font-bold text-purple-200">\${l.user}</td>
+                        <td class="p-3"><span class="px-2.5 py-0.5 bg-purple-950 text-purple-300 text-[10px] rounded-full border border-purple-800/50">\${l.action}</span></td>
+                        <td class="p-3 text-purple-300/80">\${l.detail}</td>
                     </tr>
                 \`).join('');
             }
@@ -920,13 +982,13 @@ app.get('/', (req, res) => {
             function updateGeneratorInputFields(containerId, inputId) {
                 const container = document.getElementById(containerId);
                 if (userRole === 'admin') {
-                    container.innerHTML = \`<input id="\${inputId}" type="number" value="30" min="1" placeholder="ระบุจำนวนวันกี่วันก็ได้" class="w-full bg-[#0d111d] border border-slate-800 p-3 rounded-xl text-white font-mono outline-none focus:border-purple-500">\`;
+                    container.innerHTML = \`<input id="\${inputId}" type="number" value="30" min="1" placeholder="ระบุจำนวนวันกี่วันก็ได้" class="w-full bg-[#0c061a] border border-purple-900/60 p-3.5 rounded-xl text-white font-mono outline-none focus:border-purple-500">\`;
                 } else {
                     container.innerHTML = \`
-                        <select id="\${inputId}" class="w-full bg-[#0d111d] border border-slate-800 p-3 rounded-xl text-white outline-none focus:border-purple-500 font-bold">
-                            <option value="1">1 วัน</option>
-                            <option value="7">7 วัน</option>
-                            <option value="30">30 วัน</option>
+                        <select id="\${inputId}" class="w-full bg-[#0c061a] border border-purple-900/60 p-3.5 rounded-xl text-white outline-none focus:border-purple-500 font-bold">
+                            <option value="1">1 Day</option>
+                            <option value="7">7 Days</option>
+                            <option value="30">30 Days</option>
                         </select>
                     \`;
                 }
@@ -1045,4 +1107,4 @@ app.get('/', (req, res) => {
     `);
 });
 
-app.listen(3000, () => console.log('🚀 Nabee Proxies Shop running on http://localhost:3000'));
+app.listen(3000, () => console.log('🚀 Server running on http://localhost:3000'));
