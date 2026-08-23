@@ -3,518 +3,396 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RP MODS - 3D Cyber Control Center</title>
-    <!-- Tailwind CSS -->
+    <title>RP MODS - 3D License Control Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Vector Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Three.js (3D Engine) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <style>
-        body { 
-            background-color: #050811; 
-            color: #94A3B8; 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            overflow: hidden;
-        }
-
-        #webgl-bg {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            z-index: 0;
-            pointer-events: none;
-        }
-
+        body { background-color: #050811; color: #94A3B8; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+        #webgl-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
         .glass-card-3d {
             background: rgba(15, 23, 42, 0.65);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(56, 189, 248, 0.15);
             border-radius: 16px;
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
         }
-
-        .glass-card-3d:hover {
-            transform: translateY(-4px) scale(1.01);
-            border-color: rgba(6, 182, 212, 0.4);
-            box-shadow: 0 20px 35px -10px rgba(6, 182, 212, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.1);
-        }
-
         .btn-neon-cyan {
             background: linear-gradient(135deg, #06b6d4, #3b82f6);
             box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
-            transition: all 0.2s ease;
         }
-
-        .btn-neon-cyan:hover {
-            box-shadow: 0 0 25px rgba(6, 182, 212, 0.8);
-            transform: scale(1.03);
-        }
-
+        .btn-neon-cyan:hover { box-shadow: 0 0 25px rgba(6, 182, 212, 0.8); transform: scale(1.02); }
         .nav-btn.active {
             background: linear-gradient(90deg, rgba(6, 182, 212, 0.2), transparent);
             color: #22d3ee;
             border-left: 3px solid #06b6d4;
-            box-shadow: 10px 0 20px -5px rgba(6, 182, 212, 0.3);
         }
-
-        .modal-backdrop { 
-            background: rgba(3, 7, 18, 0.85); 
-            backdrop-filter: blur(8px); 
-        }
-
-        /* Custom Vector Toast Notification */
-        #toast-box {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .toast-item {
-            background: #0f172a;
-            border: 1px solid #06b6d4;
-            color: #fff;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-size: 12px;
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
-            display: flex;
-            items-center: center;
-            gap: 10px;
-            animation: slideIn 0.3s ease-out forwards;
-        }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+        .modal-backdrop { background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(8px); }
+        #toast-box { position: fixed; bottom: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+        .toast-item { background: #0f172a; border: 1px solid #06b6d4; color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 12px; display: flex; items-center: center; gap: 10px; animation: slideIn 0.3s ease-out forwards; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 </head>
 <body class="flex h-screen relative select-none">
 
-    <!-- 3D Interactive Canvas -->
     <canvas id="webgl-bg"></canvas>
-
-    <!-- Vector Toast Container -->
     <div id="toast-box"></div>
 
-    <!-- Mobile Header -->
-    <div class="md:hidden fixed top-0 left-0 right-0 bg-[#070b14]/90 backdrop-blur-md border-b border-slate-800/80 p-4 flex justify-between items-center z-40">
-        <div class="flex items-center gap-2">
-            <i class="fa-solid fa-shield-halved text-cyan-400 text-xl drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i>
-            <span class="font-black text-white tracking-wider">RP MODS</span>
+    <!-- PAGE 0: LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050811]">
+        <div class="glass-card-3d bg-[#0b1329]/90 border-cyan-500/40 p-8 w-full max-w-md space-y-6">
+            <div class="text-center space-y-2">
+                <i class="fa-solid fa-shield-halved text-4xl text-cyan-400 drop-shadow-[0_0_15px_rgba(6,182,212,0.8)]"></i>
+                <h2 class="text-2xl font-black text-white tracking-widest">RP MODS SYSTEM</h2>
+                <p class="text-xs text-slate-400">เข้าสู่ระบบเพื่อจัดการ License Key</p>
+            </div>
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-bold mb-1"><i class="fa-solid fa-user text-cyan-400 mr-1"></i> Username</label>
+                    <input id="login-user" type="text" placeholder="admin หรือ reseller1" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-400">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-bold mb-1"><i class="fa-solid fa-lock text-cyan-400 mr-1"></i> Password</label>
+                    <input id="login-pass" type="password" value="123" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-400">
+                </div>
+                <button onclick="login()" class="w-full btn-neon-cyan text-black font-black py-3 rounded-xl text-xs uppercase tracking-wider mt-2">LOGIN ACCESS</button>
+            </div>
+            <div class="text-[10px] text-slate-500 text-center font-mono">
+                <p>บัญชีทดสอบ:</p>
+                <p> Admin: admin / 123 |  Reseller: reseller1 / 123</p>
+            </div>
         </div>
-        <button onclick="toggleSidebar()" class="text-cyan-400 text-xl"><i class="fa-solid fa-bars"></i></button>
     </div>
 
-    <!-- Sidebar Menu -->
-    <aside id="sidebar" class="fixed md:relative inset-y-0 left-0 w-64 bg-[#070b14]/80 backdrop-blur-xl border-r border-slate-800/80 p-4 flex flex-col justify-between z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
-        <div>
-            <div class="flex items-center justify-between mb-8 px-2">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-shield-halved text-2xl text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]"></i>
+    <!-- MAIN APP DASHBOARD (Hidden Initially) -->
+    <div id="app-screen" class="flex w-full h-full hidden">
+        <!-- Sidebar Menu -->
+        <aside id="sidebar" class="w-64 bg-[#070b14]/80 backdrop-blur-xl border-r border-slate-800/80 p-4 flex flex-col justify-between z-40">
+            <div>
+                <div class="flex items-center gap-3 mb-8 px-2">
+                    <i class="fa-solid fa-shield-halved text-2xl text-cyan-400"></i>
                     <span class="font-black text-lg text-white tracking-widest">RP MODS</span>
                 </div>
-                <button onclick="toggleSidebar()" class="md:hidden text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button>
+
+                <div class="bg-[#0f172a]/80 p-3 rounded-xl border border-cyan-500/20 mb-6">
+                    <p class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-gear"></i> Account Role
+                    </p>
+                    <p class="text-xs text-white font-medium mt-1 flex items-center justify-between">
+                        <span id="user-display-name">Guest</span>
+                        <span id="user-role-badge" class="text-[9px] bg-cyan-950 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded font-mono uppercase">Role</span>
+                    </p>
+                </div>
+
+                <nav class="space-y-1.5 text-xs font-semibold">
+                    <button onclick="switchPage('dashboard')" id="nav-dashboard" class="nav-btn active w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left">
+                        <i class="fa-solid fa-chart-pie text-cyan-400"></i> Dashboard
+                    </button>
+                    <button onclick="switchPage('keymanager')" id="nav-keymanager" class="nav-btn w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left">
+                        <span class="flex items-center gap-3"><i class="fa-solid fa-key text-amber-400"></i> Key Manager</span>
+                    </span id="nav-key-count" class="bg-cyan-950 border border-cyan-500/40 text-[10px] px-2 py-0.5 rounded-full text-cyan-300 font-mono">0</span>
+                    </button>
+                </nav>
             </div>
 
-            <div class="bg-[#0f172a]/80 p-3 rounded-xl border border-cyan-500/20 mb-6 relative overflow-hidden">
-                <div class="absolute -right-4 -bottom-4 w-12 h-12 bg-cyan-500/10 rounded-full blur-xl"></div>
-                <p class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="fa-solid fa-network-wired"></i> Active Node
-                </p>
-                <p class="text-xs text-white font-medium flex items-center gap-2 mt-1">
-                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-                    RP MODS <span class="text-[9px] bg-cyan-950 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded font-mono">ONLINE</span>
-                </p>
-            </div>
-
-            <!-- Navigation Links -->
-            <nav class="space-y-1.5 text-xs font-semibold">
-                <button onclick="switchPage('dashboard')" id="nav-dashboard" class="nav-btn active w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all">
-                    <i class="fa-solid fa-chart-pie text-cyan-400"></i> 3D Dashboard
-                </button>
-                <button onclick="switchPage('keymanager')" id="nav-keymanager" class="nav-btn w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left hover:bg-slate-800/40 hover:text-white transition-all">
-                    <span class="flex items-center gap-3"><i class="fa-solid fa-key text-amber-400"></i> Key Manager</span>
-                    <span id="nav-key-count" class="bg-cyan-950 border border-cyan-500/40 text-[10px] px-2 py-0.5 rounded-full text-cyan-300 font-mono">0</span>
-                </button>
-                <button onclick="openModal()" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left hover:bg-slate-800/40 hover:text-white transition-all text-slate-400">
-                    <i class="fa-solid fa-sliders text-purple-400"></i> Key Generator Hub
-                </button>
-            </nav>
-        </div>
-
-        <div class="text-[10px] text-slate-500 text-center font-mono flex items-center justify-center gap-1">
-            <i class="fa-solid fa-code"></i> RP MODS 3D Core v3.0
-        </div>
-    </aside>
-
-    <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 mt-14 md:mt-0 z-10">
-
-        <!-- Top Header -->
-        <header class="flex justify-between items-center glass-card-3d p-4">
-            <div>
-                <h1 id="page-title" class="text-xl md:text-2xl font-black text-white tracking-wide flex items-center gap-2">
-                    <i class="fa-solid fa-cube text-cyan-400"></i> 3D Control Center
-                </h1>
-                <p class="text-[11px] text-slate-400 hidden sm:block">Interactive License Security & HWID Holographic Engine</p>
-            </div>
-            <button onclick="openModal()" class="btn-neon-cyan text-black font-extrabold px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs uppercase tracking-wider">
-                <i class="fa-solid fa-plus-circle text-sm"></i> Generate Key
+            <button onclick="logout()" class="w-full bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
             </button>
-        </header>
+        </aside>
 
-        <!-- PAGE 1: DASHBOARD -->
-        <div id="page-dashboard-content" class="space-y-6">
-            <!-- KPI Cards Grid -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                <div class="glass-card-3d p-4 relative overflow-hidden">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-database text-cyan-400"></i> Total Licenses
-                    </span>
-                    <div id="stat-total" class="text-3xl font-black text-white my-1 font-mono">0</div>
-                    <p class="text-[10px] text-cyan-400/80">System Records</p>
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-6 space-y-6 z-10">
+            <header class="flex justify-between items-center glass-card-3d p-4">
+                <div>
+                    <h1 id="page-title" class="text-xl font-black text-white flex items-center gap-2">
+                        <i class="fa-solid fa-cube text-cyan-400"></i> Control Center
+                    </h1>
                 </div>
-                <div class="glass-card-3d p-4 border-emerald-500/30">
-                    <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-circle-check"></i> Active
-                    </span>
-                    <div id="stat-active" class="text-3xl font-black text-emerald-400 my-1 font-mono">0</div>
-                    <p class="text-[10px] text-emerald-500/80">Operational</p>
-                </div>
-                <div class="glass-card-3d p-4 border-amber-500/30">
-                    <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-hourglass-half"></i> Expired
-                    </span>
-                    <div id="stat-expired" class="text-3xl font-black text-amber-400 my-1 font-mono">0</div>
-                    <p class="text-[10px] text-amber-500/80">Require Extension</p>
-                </div>
-                <div class="glass-card-3d p-4 border-rose-500/30">
-                    <span class="text-[10px] uppercase font-bold text-rose-400 tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-ban"></i> Banned
-                    </span>
-                    <div id="stat-banned" class="text-3xl font-black text-rose-500 my-1 font-mono">0</div>
-                    <p class="text-[10px] text-rose-500/80">Blacklisted</p>
-                </div>
-            </div>
+                <button onclick="openModal()" class="btn-neon-cyan text-black font-extrabold px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs uppercase">
+                    <i class="fa-solid fa-plus-circle text-sm"></i> Generate Key
+                </button>
+            </header>
 
-            <!-- Analytics & Charts -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="glass-card-3d p-5 md:col-span-2 flex flex-col justify-between">
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-chart-donut text-cyan-400"></i> Real-time Key Status Hologram
-                    </h3>
-                    <div class="flex flex-col sm:flex-row items-center justify-around gap-4">
-                        <div class="w-40 h-40 relative">
-                            <canvas id="statusChart"></canvas>
+            <!-- PAGE 1: DASHBOARD -->
+            <div id="page-dashboard-content" class="space-y-6">
+                <!-- Reseller Quota Alert Box -->
+                <div id="reseller-quota-card" class="glass-card-3d p-4 border-amber-500/40 bg-amber-500/5 hidden flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-chart-line text-2xl text-amber-400"></i>
+                        <div>
+                            <p class="text-xs font-bold text-white uppercase"> Reseller Key Quota Limit</p>
+                            <p class="text-[11px] text-slate-400">คุณใช้อัตราโควตาสร้างคีย์ไปแล้ว</p>
                         </div>
-                        <div class="space-y-3 text-xs font-medium">
-                            <div class="flex items-center gap-3"><span class="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span> Active Keys: <b id="chart-active-val" class="text-white font-mono">0</b></div>
-                            <div class="flex items-center gap-3"><span class="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b]"></span> Expired Keys: <b id="chart-expired-val" class="text-white font-mono">0</b></div>
-                            <div class="flex items-center gap-3"><span class="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_8px_#ef4444]"></span> Banned Keys: <b id="chart-banned-val" class="text-white font-mono">0</b></div>
-                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p id="quota-text" class="text-xl font-black text-amber-400 font-mono">0 / 500</p>
+                        <p class="text-[10px] text-slate-500 uppercase">Keys Used</p>
                     </div>
                 </div>
 
-                <div class="glass-card-3d p-5 space-y-4">
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-microchip text-purple-400"></i> HWID Binding Insights
-                    </h3>
-                    <div class="grid grid-cols-2 gap-3 text-center pt-2">
-                        <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-                            <p class="text-2xl font-black text-cyan-400 font-mono" id="stat-avg-device">0.0</p>
-                            <p class="text-[9px] text-slate-400 mt-1 uppercase flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-laptop"></i> Avg Devices
-                            </p>
-                        </div>
-                        <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-                            <p class="text-2xl font-black text-emerald-400 font-mono" id="stat-fresh-keys">0</p>
-                            <p class="text-[9px] text-slate-400 mt-1 uppercase flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-link-slash"></i> Fresh Unbound
-                            </p>
-                        </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card-3d p-4">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-database text-cyan-400"></i> Total Keys</span>
+                        <div id="stat-total" class="text-3xl font-black text-white my-1 font-mono">0</div>
+                    </div>
+                    <div class="glass-card-3d p-4">
+                        <span class="text-[10px] uppercase font-bold text-emerald-400 flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Active</span>
+                        <div id="stat-active" class="text-3xl font-black text-emerald-400 my-1 font-mono">0</div>
+                    </div>
+                    <div class="glass-card-3d p-4">
+                        <span class="text-[10px] uppercase font-bold text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-hourglass-half"></i> Expired</span>
+                        <div id="stat-expired" class="text-3xl font-black text-amber-400 my-1 font-mono">0</div>
+                    </div>
+                    <div class="glass-card-3d p-4">
+                        <span class="text-[10px] uppercase font-bold text-rose-400 flex items-center gap-1.5"><i class="fa-solid fa-ban"></i> Banned</span>
+                        <div id="stat-banned" class="text-3xl font-black text-rose-500 my-1 font-mono">0</div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- PAGE 2: KEY MANAGER -->
-        <div id="page-keymanager-content" class="space-y-4 hidden">
-            <div class="flex justify-between items-center gap-4">
-                <div class="relative w-full max-w-xs">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
-                    <input type="text" id="search-key" oninput="renderKeysTable()" placeholder="ค้นหา License Key..." class="bg-slate-900/80 border border-slate-700/60 rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-cyan-400 w-full shadow-inner">
+            <!-- PAGE 2: KEY MANAGER -->
+            <div id="page-keymanager-content" class="space-y-4 hidden">
+                <div class="glass-card-3d overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950/80 text-cyan-400 border-b border-slate-800 uppercase text-[10px]">
+                            <tr>
+                                <th class="p-3.5"><i class="fa-solid fa-key mr-1"></i> License Key</th>
+                                <th class="p-3.5"><i class="fa-solid fa-clock mr-1"></i> Duration</th>
+                                <th class="p-3.5"><i class="fa-solid fa-user mr-1"></i> Creator</th>
+                                <th class="p-3.5"><i class="fa-solid fa-signal mr-1"></i> Status</th>
+                                <th class="p-3.5 text-center"><i class="fa-solid fa-gear mr-1"></i> Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="keys-table-body" class="divide-y divide-slate-800/40 font-mono"></tbody>
+                    </table>
                 </div>
             </div>
+        </main>
+    </div>
 
-            <div class="glass-card-3d overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-950/80 text-cyan-400 border-b border-slate-800 font-bold uppercase text-[10px] tracking-wider">
-                        <tr>
-                            <th class="p-3.5"><i class="fa-solid fa-key mr-1"></i> License Key Name</th>
-                            <th class="p-3.5"><i class="fa-solid fa-layer-group mr-1"></i> Type</th>
-                            <th class="p-3.5"><i class="fa-solid fa-signal mr-1"></i> Status</th>
-                            <th class="p-3.5"><i class="fa-solid fa-fingerprint mr-1"></i> HWID Binding</th>
-                            <th class="p-3.5"><i class="fa-solid fa-calendar-days mr-1"></i> Created</th>
-                            <th class="p-3.5 text-center"><i class="fa-solid fa-gear mr-1"></i> Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="keys-table-body" class="divide-y divide-slate-800/40 font-mono">
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- Modal Generate Key Popup -->
+    <!-- Modal Generate Key -->
     <div id="genModal" class="fixed inset-0 modal-backdrop hidden flex items-center justify-center p-4 z-50">
-        <div class="glass-card-3d bg-[#0b1329]/95 border-cyan-500/40 w-full max-w-md overflow-hidden shadow-2xl">
-            <div class="flex justify-between items-center p-4 border-b border-slate-800/80 bg-slate-950/80">
+        <div class="glass-card-3d bg-[#0b1329]/95 border-cyan-500/40 w-full max-w-md overflow-hidden">
+            <div class="flex justify-between items-center p-4 border-b border-slate-800 bg-slate-950">
                 <h3 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-terminal text-cyan-400"></i> Generate License Keys
                 </h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeModal()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-5 space-y-4 text-xs">
                 <div>
-                    <label class="block text-slate-300 font-bold mb-1">Custom Key Name / Prefix (ระบุชื่อคีย์)</label>
-                    <input id="modal-custom-prefix" type="text" placeholder="ตัวอย่าง: RPMODS-VIP-SOMCHAI" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 text-cyan-300 font-mono outline-none focus:border-cyan-400">
-                    <p class="text-[10px] text-slate-500 mt-1">*หากเว้นว่าง ระบบจะใช้ค่าเริ่มต้น RPMODS สุ่มสับให้อัตโนมัติ</p>
+                    <label class="block text-slate-300 font-bold mb-1">Custom Key Prefix</label>
+                    <input id="modal-custom-prefix" type="text" placeholder="RPMODS" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-cyan-300 font-mono outline-none">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-slate-300 font-bold mb-1">Key Type</label>
-                        <select id="modal-type" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 text-white outline-none">
+                        <select id="modal-type" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none">
                             <option value="VIP">VIP Key</option>
                             <option value="Trial">Trial Key</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-slate-300 font-bold mb-1">Duration (วัน)</label>
-                        <input id="modal-days" type="number" value="30" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 text-white outline-none font-mono">
+                        <label class="block text-slate-300 font-bold mb-1">Duration (ระยะเวลา)</label>
+                        <!-- เลือกวันที่จะเปลี่ยนไปตาม Role -->
+                        <select id="modal-days" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none font-mono">
+                            <!-- JS Will Render Days Here -->
+                        </select>
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-slate-300 font-bold mb-1">Quantity (จำนวนคีย์)</label>
-                    <input id="modal-quantity" type="number" value="1" min="1" max="50" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 text-white outline-none font-mono">
+                    <input id="modal-quantity" type="number" value="1" min="1" max="100" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none font-mono">
                 </div>
             </div>
-            <div class="flex gap-2 p-4 border-t border-slate-800/80 bg-slate-950/80">
-                <button onclick="generateKeysLogic()" class="flex-1 btn-neon-cyan text-black font-black py-2.5 rounded-xl text-xs uppercase tracking-wider">+ Generate Batch</button>
-                <button onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs">Cancel</button>
+            <div class="flex gap-2 p-4 border-t border-slate-800 bg-slate-950">
+                <button onclick="generateKeysLogic()" class="flex-1 btn-neon-cyan text-black font-black py-2.5 rounded-xl text-xs uppercase">+ Generate Key</button>
+                <button onclick="closeModal()" class="bg-slate-800 text-slate-300 font-bold px-4 py-2.5 rounded-xl text-xs">Cancel</button>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript & 3D Interactive Engine -->
     <script>
-        // Custom Toast Notification System
+        let currentUser = null;
+
         function showToast(message, iconClass = 'fa-solid fa-circle-check text-cyan-400') {
             const container = document.getElementById('toast-box');
             const toast = document.createElement('div');
             toast.className = 'toast-item';
             toast.innerHTML = `<i class="${iconClass}"></i> <span>${message}</span>`;
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transition = '0.3s';
-                setTimeout(() => toast.remove(), 300);
-            }, 2500);
+            setTimeout(() => { toast.remove(); }, 3000);
         }
 
-        // --- 1. Three.js Interactive 3D Background Engine ---
-        const canvas = document.getElementById('webgl-bg');
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-        
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        async function login() {
+            const username = document.getElementById('login-user').value;
+            const password = document.getElementById('login-pass').value;
 
-        const particlesCount = 350;
-        const positions = new Float32Array(particlesCount * 3);
-        for(let i = 0; i < particlesCount * 3; i++) {
-            positions[i] = (Math.random() - 0.5) * 15;
-        }
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
 
-        const particlesGeometry = new THREE.BufferGeometry();
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            if (data.success) {
+                currentUser = data.user;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                
+                document.getElementById('user-display-name').innerText = currentUser.username;
+                document.getElementById('user-role-badge').innerText = currentUser.role;
 
-        const particlesMaterial = new THREE.PointsMaterial({
-            size: 0.04,
-            color: 0x06b6d4,
-            transparent: true,
-            opacity: 0.6
-        });
+                // กำหนดตัวเลือกระยะเวลาวันตาม Role
+                const daysSelect = document.getElementById('modal-days');
+                if (currentUser.role === 'reseller') {
+                    daysSelect.innerHTML = `
+                        <option value="1">1 วัน</option>
+                        <option value="7">7 วัน</option>
+                        <option value="30">30 วัน</option>
+                    `;
+                    document.getElementById('reseller-quota-card').classList.remove('hidden');
+                } else {
+                    daysSelect.innerHTML = `
+                        <option value="1">1 วัน</option>
+                        <option value="7">7 วัน</option>
+                        <option value="30">30 วัน</option>
+                        <option value="90">90 วัน</option>
+                        <option value="365">365 วัน</option>
+                    `;
+                }
 
-        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-        scene.add(particlesMesh);
-        camera.position.z = 5;
-
-        let mouseX = 0, mouseY = 0;
-        window.addEventListener('pointermove', (e) => {
-            mouseX = (e.clientX / window.innerWidth - 0.5) * 0.5;
-            mouseY = (e.clientY / window.innerHeight - 0.5) * 0.5;
-        });
-
-        function animate3D() {
-            requestAnimationFrame(animate3D);
-            particlesMesh.rotation.y += 0.001;
-            particlesMesh.rotation.x += 0.0005;
-            
-            camera.position.x += (mouseX - camera.position.x) * 0.05;
-            camera.position.y += (-mouseY - camera.position.y) * 0.05;
-            camera.lookAt(scene.position);
-
-            renderer.render(scene, camera);
-        }
-        animate3D();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // --- 2. Chart.js & Dashboard Logic ---
-        let allKeysData = [];
-        const ctx = document.getElementById('statusChart').getContext('2d');
-        const myChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: { 
-                labels: ['Active', 'Expired', 'Banned'], 
-                datasets: [{ 
-                    data: [0,0,0], 
-                    backgroundColor: ['#10B981', '#F59E0B', '#EF4444'], 
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }] 
-            },
-            options: { cutout: '75%', plugins: { legend: { display: false } } }
-        });
-
-        function switchPage(page) {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`nav-${page}`).classList.add('active');
-
-            if(page === 'dashboard') {
-                document.getElementById('page-title').innerHTML = `<i class="fa-solid fa-cube text-cyan-400"></i> 3D Control Center`;
-                document.getElementById('page-dashboard-content').classList.remove('hidden');
-                document.getElementById('page-keymanager-content').classList.add('hidden');
+                fetchDashboardStats();
             } else {
-                document.getElementById('page-title').innerHTML = `<i class="fa-solid fa-key text-amber-400"></i> Key Manager`;
-                document.getElementById('page-dashboard-content').classList.add('hidden');
-                document.getElementById('page-keymanager-content').classList.remove('hidden');
-                loadKeysTable();
+                showToast(data.message, 'fa-solid fa-triangle-exclamation text-rose-500');
             }
-            if(window.innerWidth < 768) toggleSidebar();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
         }
 
         async function fetchDashboardStats() {
-            try {
-                const res = await fetch('/api/dashboard-stats');
-                const data = await res.json();
-                document.getElementById('stat-total').innerText = data.total;
-                document.getElementById('stat-active').innerText = data.active;
-                document.getElementById('stat-expired').innerText = data.expired;
-                document.getElementById('stat-banned').innerText = data.banned;
-                document.getElementById('nav-key-count').innerText = data.total;
-                document.getElementById('chart-active-val').innerText = data.active;
-                document.getElementById('chart-expired-val').innerText = data.expired;
-                document.getElementById('chart-banned-val').innerText = data.banned;
-                document.getElementById('stat-avg-device').innerText = data.avgDevice;
-                document.getElementById('stat-fresh-keys').innerText = data.freshKeys;
-                myChart.data.datasets[0].data = [data.active, data.expired, data.banned];
-                myChart.update();
-            } catch (err) {}
+            const res = await fetch('/api/dashboard-stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: currentUser.username, role: currentUser.role })
+            });
+            const data = await res.json();
+
+            document.getElementById('stat-total').innerText = data.total;
+            document.getElementById('stat-active').innerText = data.active;
+            document.getElementById('stat-expired').innerText = data.expired;
+            document.getElementById('stat-banned').innerText = data.banned;
+
+            if (currentUser.role === 'reseller') {
+                document.getElementById('quota-text').innerText = `${data.quotaUsed} / ${data.quotaMax}`;
+            }
         }
 
         async function loadKeysTable() {
-            try {
-                const res = await fetch('/api/keys');
-                allKeysData = await res.json();
-                renderKeysTable();
-            } catch (err) {}
-        }
-
-        function renderKeysTable() {
-            const search = document.getElementById('search-key').value.toLowerCase();
-            const filtered = allKeysData.filter(k => k.key.toLowerCase().includes(search));
+            const res = await fetch('/api/keys', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: currentUser.username, role: currentUser.role })
+            });
+            const keys = await res.json();
             const tbody = document.getElementById('keys-table-body');
             
-            if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500 font-sans">ไม่พบข้อมูล License Key</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = filtered.map(k => `
-                <tr class="hover:bg-cyan-500/10 transition-colors">
-                    <td class="p-3.5 text-cyan-300 font-bold tracking-wider">${k.key}</td>
-                    <td class="p-3.5"><span class="bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-[10px] text-slate-300">${k.type} (${k.duration}d)</span></td>
-                    <td class="p-3.5"><span class="bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 px-2.5 py-0.5 rounded-full text-[10px] font-bold">Active</span></td>
-                    <td class="p-3.5 text-[11px] text-slate-500">${k.hwid}</td>
-                    <td class="p-3.5 text-[11px] text-slate-400">${k.createdAt}</td>
-                    <td class="p-3.5 text-center space-x-3">
-                        <button onclick="copyToClipboard('${k.key}')" class="text-cyan-400 hover:text-cyan-200 transition-transform active:scale-125"><i class="fa-solid fa-copy text-sm"></i></button>
-                        <button onclick="deleteKey(${k.id})" class="text-rose-500 hover:text-rose-300 transition-transform active:scale-125"><i class="fa-solid fa-trash text-sm"></i></button>
+            tbody.innerHTML = keys.map(k => `
+                <tr class="hover:bg-cyan-500/10">
+                    <td class="p-3.5 text-cyan-300 font-bold">${k.key}</td>
+                    <td class="p-3.5">${k.duration} วัน</td>
+                    <td class="p-3.5 text-slate-400">${k.createdBy}</td>
+                    <td class="p-3.5"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-[10px]">Active</span></td>
+                    <td class="p-3.5 text-center">
+                        <button onclick="navigator.clipboard.writeText('${k.key}'); showToast('คัดลอกคีย์แล้ว!');" class="text-cyan-400 mr-2"><i class="fa-solid fa-copy"></i></button>
+                        <button onclick="deleteKey(${k.id})" class="text-rose-500"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('');
         }
 
         async function generateKeysLogic() {
-            const qty = parseInt(document.getElementById('modal-quantity').value) || 1;
+            const qty = document.getElementById('modal-quantity').value;
             const type = document.getElementById('modal-type').value;
-            const days = parseInt(document.getElementById('modal-days').value) || 30;
+            const days = document.getElementById('modal-days').value;
             const customPrefix = document.getElementById('modal-custom-prefix').value;
 
             const res = await fetch('/api/generate-key', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ count: qty, type, days, customPrefix })
+                body: JSON.stringify({ 
+                    count: qty, type, days, customPrefix, 
+                    username: currentUser.username, role: currentUser.role 
+                })
             });
             const result = await res.json();
-            if(result.success) {
+
+            if (result.success) {
                 closeModal();
                 fetchDashboardStats();
-                loadKeysTable();
-                showToast(`สร้าง ${qty} License Key เรียบร้อยแล้ว!`, 'fa-solid fa-wand-magic-sparkles text-cyan-400');
+                if(!document.getElementById('page-keymanager-content').classList.contains('hidden')) loadKeysTable();
+                showToast(`สร้าง ${qty} License Key สำเร็จแล้ว!`);
+            } else {
+                showToast(result.message, 'fa-solid fa-circle-xmark text-rose-500');
             }
         }
 
         async function deleteKey(id) {
-            if(confirm("คุณต้องการลบ Key นี้ใช่หรือไม่?")) {
+            if(confirm("ยืนยันการลบ Key?")) {
                 await fetch(`/api/delete-key/${id}`, { method: 'DELETE' });
                 fetchDashboardStats();
                 loadKeysTable();
-                showToast("ลบ Key ออกจากระบบแล้ว!", "fa-solid fa-trash-can text-rose-400");
             }
         }
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text);
-            showToast("คัดลอก License Key ลง Clipboard แล้ว!", "fa-solid fa-copy text-emerald-400");
+        function switchPage(page) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`nav-${page}`).classList.add('active');
+
+            if(page === 'dashboard') {
+                document.getElementById('page-dashboard-content').classList.remove('hidden');
+                document.getElementById('page-keymanager-content').classList.add('hidden');
+            } else {
+                document.getElementById('page-dashboard-content').classList.add('hidden');
+                document.getElementById('page-keymanager-content').classList.remove('hidden');
+                loadKeysTable();
+            }
         }
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         function openModal() { document.getElementById('genModal').classList.remove('hidden'); }
-        function closeModal() { 
-            document.getElementById('modal-custom-prefix').value = '';
-            document.getElementById('genModal').classList.add('hidden'); 
-        }
+        function closeModal() { document.getElementById('genModal').classList.add('hidden'); }
 
-        fetchDashboardStats();
+        // --- 3D Background Engine ---
+        const canvas = document.getElementById('webgl-bg');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const particlesGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(300 * 3);
+        for(let i = 0; i < 900; i++) positions[i] = (Math.random() - 0.5) * 15;
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particlesMaterial = new THREE.PointsMaterial({ size: 0.04, color: 0x06b6d4 });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+        camera.position.z = 5;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            particlesMesh.rotation.y += 0.001;
+            renderer.render(scene, camera);
+        }
+        animate();
     </script>
 </body>
 </html>
