@@ -5,139 +5,141 @@ const path = require('path');
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// จำลอง Database
-let keysDatabase = [];
-let usersDatabase = [
-    { username: 'admin', password: '123', role: 'admin', maxQuota: Infinity },
-    { username: 'reseller1', password: '123', role: 'reseller', maxQuota: 500, createdCount: 0 }
+// CONFIG KEYS (เก็บลับเฉพาะฝั่ง Server)
+const ADMIN_SECRET = "ZDSAWERBHKLJ";
+const RESELLER_SECRET = "ResellBBVC";
+
+// Datastores
+let keysDatabase = [
+    { id: 1, key: "BRMODS-A8K2-99XZ", duration: 30, status: 'active', hwid: 'DEV-8821-X', owner: 'BR MODS', createdAt: '23/08/2026' },
+    { id: 2, key: "BRMODS-PL91-11QQ", duration: 1, status: 'active', hwid: 'Unbound', owner: 'BR MODS', createdAt: '23/08/2026' }
 ];
 
-function generateLicenseKey(customPrefix = "RPMODS") {
+let resellerPanels = [
+    { id: 'resell-01', name: 'VIP GameShop', keyQuota: 500, keysCreated: 42, activeSessionId: null },
+    { id: 'resell-02', name: 'Apex Key Store', keyQuota: 500, keysCreated: 120, activeSessionId: null }
+];
+
+function generateLicenseKey(prefix = "BRMODS") {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     const segment = () => Array.from({length: 4}, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
-    const cleanPrefix = customPrefix.trim().toUpperCase().replace(/\s+/g, '-');
-    return `${cleanPrefix}-${segment()}-${segment()}`;
+    return `${prefix.trim().toUpperCase()}-${segment()}-${segment()}`;
 }
 
-// 1. API Login
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    const user = usersDatabase.find(u => u.username === username && u.password === password);
-    
-    if (!user) {
-        return res.status(401).json({ success: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
-    }
-    
-    res.json({
-        success: true,
-        user: {
-            username: user.username,
-            role: user.role,
-            maxQuota: user.maxQuota,
-            createdCount: user.createdCount || 0
-        }
-    });
+// ---------------- AUTH & LOCKING ---------------- //
+
+app.post('/api/auth/login', (req, res) => {
+    const { secretCode } = req.body;
+    if (secretCode === ADMIN_SECRET) return res.json({ success: true, role: 'admin' });
+    if (secretCode === RESELLER_SECRET) return res.json({ success: true, role: 'reseller' });
+    res.status(401).json({ success: false, message: 'รหัสเข้าใช้งานไม่ถูกต้อง!' });
 });
 
-// 2. API Fetch Keys (ดึงข้อมูลแยกตาม Role)
-app.post('/api/keys', (req, res) => {
-    const { username, role } = req.body;
-    if (role === 'admin') {
-        return res.json(keysDatabase);
+app.post('/api/auth/claim-panel', (req, res) => {
+    const { panelId, sessionId } = req.body;
+    const panel = resellerPanels.find(p => p.id === panelId);
+
+    if (!panel) return res.status(404).json({ success: false, message: 'ไม่พบแผงที่ระบุ' });
+    if (panel.activeSessionId && panel.activeSessionId !== sessionId) {
+        return res.status(403).json({ success: false, message: '🔒 แผงนี้กำลังมีผู้อื่นใช้งานอยู่!' });
     }
-    // Reseller เห็นเฉพาะคีย์ที่ตัวเองสร้าง
-    const resellerKeys = keysDatabase.filter(k => k.createdBy === username);
-    res.json(resellerKeys);
+
+    panel.activeSessionId = sessionId;
+    res.json({ success: true, panel });
 });
 
-// 3. API Generate Key (พร้อม Validation กฎของ Reseller)
+app.post('/api/auth/release-panel', (req, res) => {
+    const { panelId, sessionId } = req.body;
+    const panel = resellerPanels.find(p => p.id === panelId);
+    if (panel && panel.activeSessionId === sessionId) panel.activeSessionId = null;
+    res.json({ success: true });
+});
+
+// ---------------- DASHBOARD APIs ---------------- //
+
+app.get('/api/admin/resellers', (req, res) => res.json(resellerPanels));
+
+app.post('/api/admin/create-reseller', (req, res) => {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ success: false, message: 'กรุณาระบุชื่อแผง' });
+
+    const newReseller = {
+        id: 'resell-' + Date.now().toString().slice(-4),
+        name: name.trim(),
+        keyQuota: 500,
+        keysCreated: 0,
+        activeSessionId: null
+    };
+    resellerPanels.unshift(newReseller);
+    res.json({ success: true, reseller: newReseller });
+});
+
+app.delete('/api/admin/delete-reseller/:id', (req, res) => {
+    resellerPanels = resellerPanels.filter(r => r.id !== req.params.id);
+    res.json({ success: true });
+});
+
+app.get('/api/keys', (req, res) => {
+    const owner = req.query.owner || 'BR MODS';
+    res.json(owner === 'BR MODS' ? keysDatabase : keysDatabase.filter(k => k.owner === owner));
+});
+
 app.post('/api/generate-key', (req, res) => {
-    const { count, type, days, customPrefix, username, role } = req.body;
+    const { count, days, prefix, owner } = req.body;
     const qty = parseInt(count) || 1;
     const durationDays = parseInt(days);
+    const isReseller = owner !== 'BR MODS';
 
-    // ตรวจสอบสิทธิ์และโควตาสำหรับ Reseller
-    if (role === 'reseller') {
-        const user = usersDatabase.find(u => u.username === username);
-        
-        // กฎข้อที่ 1: จำกัดความยาว 1, 7, 30 วันเท่านั้น
-        const allowedDays = [1, 7, 30];
-        if (!allowedDays.includes(durationDays)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: ' Reseller อนุญาตให้สร้างคีย์อายุ 1 วัน, 7 วัน หรือ 30 วัน เท่านั้น!' 
-            });
+    if (isReseller) {
+        const reseller = resellerPanels.find(r => r.id === owner || r.name === owner);
+        if (!reseller) return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลแผง' });
+        if (![1, 7, 30].includes(durationDays)) {
+            return res.status(400).json({ success: false, message: 'Reseller เลือกสร้างได้เฉพาะ 1, 7 หรือ 30 วัน' });
         }
-
-        // กฎข้อที่ 2: จำกัดจำนวนคีย์ไม่เกิน 500 คีย์
-        if (user.createdCount + qty > user.maxQuota) {
-            return res.status(400).json({ 
-                success: false, 
-                message: ` โควตาไม่พอ! คุณสร้างไปแล้ว ${user.createdCount}/${user.maxQuota} คีย์ (คงเหลือ ${user.maxQuota - user.createdCount} คีย์)` 
-            });
+        if (reseller.keysCreated + qty > reseller.keyQuota) {
+            return res.status(400).json({ success: false, message: 'โควตาเต็มแล้ว!' });
         }
-
-        // อัปเดตยอดโควตาที่ใช้ไป
-        user.createdCount += qty;
+        reseller.keysCreated += qty;
     }
 
     let newKeys = [];
-    const prefixToUse = customPrefix && customPrefix.trim() !== "" ? customPrefix : "RPMODS";
+    const prefixToUse = prefix && prefix.trim() !== '' ? prefix : (isReseller ? 'RESELL' : 'BRMODS');
 
     for (let i = 0; i < qty; i++) {
         const keyData = {
             id: Date.now() + i,
             key: generateLicenseKey(prefixToUse),
-            type: type || 'VIP',
             duration: durationDays,
             status: 'active',
             hwid: 'Unbound',
-            createdBy: username,
+            owner: owner || 'BR MODS',
             createdAt: new Date().toLocaleDateString('th-TH')
         };
         keysDatabase.unshift(keyData);
         newKeys.push(keyData);
     }
-
-    const currentUser = usersDatabase.find(u => u.username === username);
-    res.json({ 
-        success: true, 
-        generatedKeys: newKeys,
-        updatedQuota: currentUser ? currentUser.createdCount : null
-    });
+    res.json({ success: true, keys: newKeys });
 });
 
-// 4. API Delete Key
 app.delete('/api/delete-key/:id', (req, res) => {
-    const keyId = parseInt(req.params.id);
-    keysDatabase = keysDatabase.filter(k => k.id !== keyId);
+    keysDatabase = keysDatabase.filter(k => k.id !== parseInt(req.params.id));
     res.json({ success: true });
 });
 
-// 5. API Dashboard Stats
-app.post('/api/dashboard-stats', (req, res) => {
-    const { username, role } = req.body;
-    const targetDatabase = role === 'admin' ? keysDatabase : keysDatabase.filter(k => k.createdBy === username);
-
-    const total = targetDatabase.length;
-    const active = targetDatabase.filter(k => k.status === 'active').length;
-    const expired = targetDatabase.filter(k => k.status === 'expired').length;
-    const banned = targetDatabase.filter(k => k.status === 'banned').length;
-    const freshKeys = targetDatabase.filter(k => k.hwid === 'Unbound').length;
-
-    const user = usersDatabase.find(u => u.username === username);
+app.get('/api/stats', (req, res) => {
+    const owner = req.query.owner || 'BR MODS';
+    const targetKeys = owner === 'BR MODS' ? keysDatabase : keysDatabase.filter(k => k.owner === owner);
+    const reseller = resellerPanels.find(r => r.id === owner || r.name === owner);
 
     res.json({
-        total, active, expired, banned, freshKeys,
-        avgDevice: total > 0 ? ((total - freshKeys) / total).toFixed(1) : "0.0",
-        quotaUsed: user ? user.createdCount : total,
-        quotaMax: user ? user.maxQuota : Infinity
+        totalKeys: targetKeys.length,
+        activeKeys: targetKeys.filter(k => k.status === 'active').length,
+        expiredKeys: targetKeys.filter(k => k.status === 'expired').length,
+        bannedKeys: targetKeys.filter(k => k.status === 'banned').length,
+        quotaUsed: reseller ? reseller.keysCreated : targetKeys.length,
+        quotaMax: reseller ? reseller.keyQuota : '∞'
     });
 });
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`RP MODS Dashboard running on port ${PORT}`));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.listen(3000, () => console.log('Server running on http://localhost:3000'));
