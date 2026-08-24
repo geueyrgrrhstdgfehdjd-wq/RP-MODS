@@ -211,7 +211,7 @@ app.get('/', (req, res) => {
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Kanit', sans-serif; box-sizing: border-box; }
-        body { background-color: #f5f3ff; color: #2e1065; overflow-x: hidden; }
+        body { background-color: #f5f3ff; color: #2e1065; overflow-x: hidden; touch-action: manipulation; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 10px; }
         .glass-card { background: #ffffff; border: 1.5px solid #f3e8ff; box-shadow: 0 8px 20px rgba(168, 85, 247, 0.06); }
@@ -226,7 +226,7 @@ app.get('/', (req, res) => {
         .sidebar-collapsed .sidebar-item { justify-content: center; padding-left: 0; padding-right: 0; }
     </style>
 </head>
-<body class="min-h-screen flex text-sm" onload="initApp()" onclick="closeAllMenus(event)">
+<body class="min-h-screen flex text-sm">
 
     <div id="gate-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-purple-950/30 backdrop-blur-sm">
         <div class="glass-card p-7 max-w-sm w-full rounded-3xl text-center space-y-5 border-2 border-purple-200">
@@ -238,13 +238,13 @@ app.get('/', (req, res) => {
                 <p class="text-xs text-purple-600 mt-0.5">กรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
             </div>
 
-            <div class="space-y-3">
-                <input id="pass-code" type="password" placeholder="••••••••••••" autocomplete="off" class="w-full bg-purple-50/50 border border-purple-200 rounded-xl p-3 text-center text-purple-900 outline-none focus:border-purple-400">
+            <form id="login-form" action="javascript:void(0);" class="space-y-3">
+                <input id="pass-code" type="password" placeholder="••••••••••••" autocomplete="off" class="w-full bg-purple-50/50 border border-purple-200 rounded-xl p-3 text-center text-purple-900 outline-none focus:border-purple-400 text-base">
                 <p id="login-error-msg" class="text-xs text-rose-500 font-medium hidden"></p>
-                <button type="button" id="btn-submit-login" onclick="doLogin()" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
+                <button type="submit" id="btn-submit-login" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform">
                     <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
                 </button>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -439,11 +439,19 @@ app.get('/', (req, res) => {
         const AUTH_ADMIN = "${ADMIN_CODE}";
         const AUTH_RESELLER = "${RESELLER_CODE}";
 
-        // Safe LocalStorage Wrapper (ป้องกัน In-App Browser พัง)
+        // Safe Storage Helper
+        const memStorage = {};
         const storage = {
-            get: (key) => { try { return localStorage.getItem(key); } catch(e) { return window['mem_' + key] || null; } },
-            set: (key, val) => { try { localStorage.setItem(key, val); } catch(e) { window['mem_' + key] = val; } },
-            clear: () => { try { localStorage.clear(); } catch(e) {} }
+            get: (key) => {
+                try { return localStorage.getItem(key); } catch(e) { return memStorage[key] || null; }
+            },
+            set: (key, val) => {
+                try { localStorage.setItem(key, val); } catch(e) { memStorage[key] = val; }
+            },
+            clear: () => {
+                try { localStorage.clear(); } catch(e) {}
+                for (let k in memStorage) delete memStorage[k];
+            }
         };
 
         let userRole = storage.get('userRole') || null;
@@ -460,29 +468,11 @@ app.get('/', (req, res) => {
         function toggleKeyDurationInput(v) { document.getElementById('key-duration-box').classList.toggle('hidden', v); }
 
         function initApp() {
-            // ผูก Event ปุ่มกดบนคีย์บอร์ดมือถือ
-            const passInput = document.getElementById('pass-code');
-            if (passInput) {
-                passInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        doLogin();
-                    }
-                });
-            }
-
             if (userRole) {
                 document.getElementById('gate-screen').classList.add('hidden');
                 if (userRole === 'admin') showDashboard();
                 else loadPanelsForReseller();
             }
-        }
-
-        function switchTab(t) {
-            document.querySelectorAll('.tab-view').forEach(e => e.classList.remove('active'));
-            document.querySelectorAll('.sidebar-item').forEach(e => e.classList.remove('active'));
-            document.getElementById('tab-' + t).classList.add('active');
-            document.getElementById('nav-' + t).classList.add('active');
         }
 
         function doLogin() {
@@ -515,6 +505,38 @@ app.get('/', (req, res) => {
                 errEl.innerText = '⚠️ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
                 errEl.classList.remove('hidden');
             }
+        }
+
+        // Event Binding เมื่อ DOM พร้อม
+        document.addEventListener('DOMContentLoaded', function() {
+            initApp();
+
+            const form = document.getElementById('login-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    doLogin();
+                });
+            }
+
+            // ซ่อน Action Menu เมื่อกดพื้นที่อื่น
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.key-action-dropdown') && !e.target.closest('button')) {
+                    closeAllMenus();
+                }
+            });
+        });
+
+        // สำรองเผื่อ DOMContentLoaded ทำงานไปแล้ว
+        if (document.readyState === 'interactive' || document.readyState === 'complete') {
+            initApp();
+        }
+
+        function switchTab(t) {
+            document.querySelectorAll('.tab-view').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.sidebar-item').forEach(e => e.classList.remove('active'));
+            document.getElementById('tab-' + t).classList.add('active');
+            document.getElementById('nav-' + t).classList.add('active');
         }
 
         async function loadPanelsForReseller() {
@@ -560,7 +582,6 @@ app.get('/', (req, res) => {
 
         function logout() { storage.clear(); location.reload(); }
 
-        // Action Menu Handler
         function toggleKeyMenu(event, id) {
             event.stopPropagation();
             const existingMenu = document.getElementById('action-menu-' + id);
