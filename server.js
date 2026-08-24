@@ -1,13 +1,12 @@
-require('dotenv').config();
 const express = require('express');
 const crypto = require('crypto');
 const app = express();
 
 app.use(express.json());
 
-// ---------------- CONFIG SYSTEM KEYS ---------------- //
-const ADMIN_CODE = process.env.ADMIN_CODE || crypto.randomBytes(16).toString('hex');
-const RESELLER_CODE = process.env.RESELLER_CODE || crypto.randomBytes(16).toString('hex');
+// ---------------- CONFIG SYSTEM KEYS (ฝังรหัสผ่านลงในโค้ด) ---------------- //
+const ADMIN_CODE = "ZDSAWERBHKLJ";
+const RESELLER_CODE = "ResellBBVC";
 
 // ---------------- DATABASE ---------------- //
 let keysDatabase = [];
