@@ -110,10 +110,20 @@ app.get('/api/keys', (req, res) => {
 });
 
 app.post('/api/generate-key', (req, res) => {
-    const { count, days, prefix, owner } = req.body || {};
+    const { count, durationValue, unit, isLifetime, prefix, owner } = req.body || {};
     const qty = parseInt(count) || 1;
-    const durationDays = parseInt(days) || 1;
     const isReseller = owner !== 'ADMIN';
+
+    // คำนวณจำนวนวันตามหน่วยที่เลือก
+    let durationDays = 0;
+    if (isLifetime) {
+        durationDays = 99999; // โค้ดแทนค่าถาวร
+    } else {
+        const val = parseInt(durationValue) || 1;
+        if (unit === 'month') durationDays = val * 30;
+        else if (unit === 'year') durationDays = val * 365;
+        else durationDays = val; // default 'day'
+    }
 
     if (isReseller) {
         const panel = resellerPanels.find(p => p.name === owner || p.id === owner);
@@ -135,7 +145,7 @@ app.post('/api/generate-key', (req, res) => {
         const item = {
             id: Date.now() + i,
             key: generateKey(keyPrefix),
-            duration: durationDays,
+            duration: isLifetime ? 'Lifetime (ถาวร)' : `${durationDays} วัน`,
             owner: owner,
             hwid: 'Unbound',
             status: 'active',
@@ -144,11 +154,10 @@ app.post('/api/generate-key', (req, res) => {
         keysDatabase.unshift(item);
         created.push(item);
     }
-    logActivity('GENERATE_KEY', `สร้าง Key จำนวน ${qty} ใบ (${durationDays} วัน)`, owner);
+    logActivity('GENERATE_KEY', `สร้าง Key จำนวน ${qty} ใบ (${isLifetime ? 'ถาวร' : durationDays + ' วัน'})`, owner);
     res.json({ success: true, keys: created });
 });
 
-// API สั่งระงับ/แบน คีย์ (เมื่อกดสั่งระงับ สถานะ Banned จะเพิ่มขึ้น)
 app.post('/api/ban-key/:id', (req, res) => {
     const keyItem = keysDatabase.find(k => k.id === parseInt(req.params.id));
     if (keyItem) {
@@ -159,7 +168,6 @@ app.post('/api/ban-key/:id', (req, res) => {
     res.status(404).json({ success: false, message: 'ไม่พบ คีย์ ในระบบ' });
 });
 
-// API ลบคีย์
 app.delete('/api/delete-key/:id', (req, res) => {
     const keyItem = keysDatabase.find(k => k.id === parseInt(req.params.id));
     if (keyItem) {
@@ -201,7 +209,6 @@ app.get('/', (req, res) => {
         <title>RP MODS Dashboard</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <!-- โหลดฟอนต์ Kanit สไตล์อ่านง่าย สวยงาม -->
         <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
         <style>
             * { font-family: 'Kanit', sans-serif; box-sizing: border-box; }
@@ -216,7 +223,6 @@ app.get('/', (req, res) => {
             .tab-view { display: none; }
             .tab-view.active { display: block; }
             
-            /* CSS จัดการพับ-กาง Sidebar ให้กะทัดรัด ไม่เกินจอ */
             .sidebar-collapsed { width: 4.5rem !important; }
             .sidebar-collapsed .hide-on-collapse { display: none !important; }
             .sidebar-collapsed .sidebar-item { justify-content: center; padding-left: 0; padding-right: 0; }
@@ -257,10 +263,9 @@ app.get('/', (req, res) => {
         <!-- หน้าหลัก Dashboard -->
         <div id="dashboard-screen" class="flex w-full h-screen overflow-hidden hidden">
             
-            <!-- แถบซ้าย (ย่อ-ขยาย พับเปิดปิดได้พอดี) -->
+            <!-- แถบซ้าย -->
             <aside id="main-sidebar" class="w-56 border-r border-purple-100 p-3 flex flex-col justify-between bg-white/80 shrink-0 transition-all duration-300">
                 <div class="space-y-4">
-                    <!-- ปุ่มเปิดปิด Sidebar + โลโก้ -->
                     <div class="flex items-center justify-between px-1">
                         <div class="flex items-center gap-2.5 overflow-hidden">
                             <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-400 to-pink-400 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
@@ -276,13 +281,11 @@ app.get('/', (req, res) => {
                         </button>
                     </div>
 
-                    <!-- สถานะแผงที่ใช้อยู่ -->
                     <div class="bg-purple-50/80 border border-purple-100 p-2 rounded-xl text-center">
                         <div class="text-[9px] text-purple-400 font-normal uppercase hide-on-collapse">แผงที่ใช้งาน</div>
                         <div id="active-panel-name" class="text-xs font-semibold text-purple-900 truncate"><i class="fa-solid fa-user-gear mr-1 text-purple-400"></i><span class="hide-on-collapse">ADMIN</span></div>
                     </div>
 
-                    <!-- เมนูการใช้งาน -->
                     <nav class="space-y-1">
                         <div id="nav-dashboard" onclick="switchTab('dashboard')" class="sidebar-item active" title="ภาพรวมระบบ">
                             <i class="fa-solid fa-chart-pie w-5 text-center text-base"></i>
@@ -299,7 +302,6 @@ app.get('/', (req, res) => {
                     </nav>
                 </div>
 
-                <!-- ปุ่มออกจากระบบ -->
                 <button onclick="logout()" class="bg-purple-50/60 hover:bg-rose-50 p-2.5 rounded-xl flex items-center justify-center gap-2 border border-purple-100 text-rose-500 font-medium text-xs transition" title="ออกจากระบบ">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     <span class="hide-on-collapse">ออกจากระบบ</span>
@@ -347,7 +349,7 @@ app.get('/', (req, res) => {
                     <div class="glass-card p-5 rounded-2xl">
                         <div class="flex justify-between items-center pb-3 mb-3 border-b border-purple-100">
                             <h3 class="font-semibold text-xs text-purple-950"><i class="fa-solid fa-key text-purple-500 mr-1"></i> รายการคีย์ในระบบ</h3>
-                            <button onclick="genKeyPrompt()" class="btn-neon-purple px-3 py-1.5 rounded-xl text-xs flex items-center gap-1"><i class="fa-solid fa-plus"></i> สร้างคีย์ใหม่</button>
+                            <button onclick="openKeyModal()" class="btn-neon-purple px-3 py-1.5 rounded-xl text-xs flex items-center gap-1"><i class="fa-solid fa-plus"></i> สร้างคีย์ใหม่</button>
                         </div>
                         <table class="w-full text-left text-xs">
                             <thead class="text-purple-400 border-b border-purple-100 font-normal">
@@ -375,6 +377,40 @@ app.get('/', (req, res) => {
                     </div>
                 </div>
             </main>
+        </div>
+
+        <!-- Pop-up สร้างคีย์ (ปรับปรุงใหม่ เพิ่ม ถาวร/วัน/เดือน/ปี) -->
+        <div id="modal-key" class="fixed inset-0 bg-purple-950/30 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+            <div class="glass-card p-6 max-w-sm w-full rounded-3xl space-y-4 border-2 border-purple-200">
+                <h3 class="text-purple-950 font-semibold text-sm flex items-center gap-2"><i class="fa-solid fa-key text-purple-500"></i> สร้างคีย์ใหม่</h3>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-purple-800 font-medium mb-1">จำนวนคีย์ที่ต้องการสร้าง (ใบ)</label>
+                        <input id="key-count" type="number" value="1" min="1" class="w-full bg-purple-50/50 border border-purple-200 p-2.5 rounded-xl outline-none focus:border-purple-400">
+                    </div>
+
+                    <div class="flex items-center gap-2 p-2 bg-purple-50/50 rounded-xl border border-purple-100">
+                        <input id="key-is-lifetime" type="checkbox" onchange="toggleKeyDurationInput(this.checked)" class="w-4 h-4 accent-purple-500 rounded">
+                        <label for="key-is-lifetime" class="font-normal text-purple-900 cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-infinity text-purple-500"></i> คีย์ถาวร (Lifetime)</label>
+                    </div>
+
+                    <div id="key-duration-box">
+                        <label class="block text-purple-800 font-medium mb-1">ระยะเวลาใช้งาน</label>
+                        <div class="flex gap-2">
+                            <input id="key-duration-value" type="number" value="1" min="1" class="flex-1 bg-purple-50/50 border border-purple-200 p-2.5 rounded-xl outline-none focus:border-purple-400">
+                            <select id="key-duration-unit" class="bg-purple-50/50 border border-purple-200 p-2.5 rounded-xl outline-none text-purple-900 font-medium focus:border-purple-400">
+                                <option value="day">วัน</option>
+                                <option value="month">เดือน</option>
+                                <option value="year">ปี</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="submitGenerateKey()" class="flex-1 btn-neon-purple py-2.5 rounded-xl text-xs">สร้างคีย์</button>
+                    <button onclick="closeModal('modal-key')" class="bg-purple-100/60 text-purple-700 px-3.5 py-2.5 rounded-xl text-xs">ยกเลิก</button>
+                </div>
+            </div>
         </div>
 
         <!-- Pop-up สร้างแผง -->
@@ -416,7 +452,6 @@ app.get('/', (req, res) => {
 
             function toast(msg) { alert(msg); }
 
-            // ฟังก์ชัน เปิด/ปิด สลับการพับ Sidebar
             function toggleSidebar() {
                 const sidebar = document.getElementById('main-sidebar');
                 sidebar.classList.toggle('sidebar-collapsed');
@@ -426,6 +461,12 @@ app.get('/', (req, res) => {
                 const daysBox = document.getElementById('days-input-box');
                 if (isLifetime) daysBox.classList.add('hidden');
                 else daysBox.classList.remove('hidden');
+            }
+
+            function toggleKeyDurationInput(isLifetime) {
+                const durationBox = document.getElementById('key-duration-box');
+                if (isLifetime) durationBox.classList.add('hidden');
+                else durationBox.classList.remove('hidden');
             }
 
             function checkAutoLogin() {
@@ -527,7 +568,7 @@ app.get('/', (req, res) => {
                                 } mr-1"></i>\${k.status.toUpperCase()}
                             </span>
                         </td>
-                        <td class="p-2.5 text-purple-700">\${k.duration} วัน</td>
+                        <td class="p-2.5 text-purple-700 font-medium">\${k.duration}</td>
                         <td class="p-2.5 text-purple-600">\${k.owner}</td>
                         <td class="p-2.5 space-x-2">
                             \${k.status !== 'banned' ? \`<button onclick="banKey(\${k.id})" class="text-amber-600 hover:underline"><i class="fa-solid fa-ban mr-1"></i>ระงับ</button>\` : ''}
@@ -570,19 +611,32 @@ app.get('/', (req, res) => {
                 }
             }
 
-            async function genKeyPrompt() {
-                const count = prompt('ต้องการสร้างจำนวนกี่ใบ?', '1');
-                const days = prompt('จำนวนวันใช้งาน?', '1');
-                if (count && days) {
-                    const res = await fetch('/api/generate-key', {
-                        method: 'POST',
-                        headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({ count, days, owner: currentOwner })
-                    });
-                    const data = await res.json();
-                    if (data.success) refreshData();
-                    else toast(data.message);
-                }
+            function openKeyModal() {
+                document.getElementById('modal-key').classList.remove('hidden');
+            }
+
+            async function submitGenerateKey() {
+                const count = document.getElementById('key-count').value;
+                const isLifetime = document.getElementById('key-is-lifetime').checked;
+                const durationValue = document.getElementById('key-duration-value').value;
+                const unit = document.getElementById('key-duration-unit').value;
+
+                const res = await fetch('/api/generate-key', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ 
+                        count, 
+                        durationValue, 
+                        unit, 
+                        isLifetime, 
+                        owner: currentOwner 
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    closeModal('modal-key');
+                    refreshData();
+                } else toast(data.message);
             }
 
             async function banKey(id) {
