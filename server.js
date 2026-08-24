@@ -239,12 +239,12 @@ app.get('/', (req, res) => {
                 <h2 class="font-semibold text-xl text-purple-950">RP MODS SYSTEM</h2>
                 <p class="text-xs text-purple-600 mt-0.5">กรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
             </div>
-            <form onsubmit="event.preventDefault(); login();" class="space-y-3">
-                <input id="pass-code" type="password" placeholder="••••••••••••" class="w-full bg-purple-50/50 border border-purple-200 rounded-xl p-3 text-center text-purple-900 outline-none focus:border-purple-400">
-                <button type="submit" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
+            <div class="space-y-3">
+                <input id="pass-code" type="password" placeholder="••••••••••••" onkeyup="if(event.key==='Enter') login()" class="w-full bg-purple-50/50 border border-purple-200 rounded-xl p-3 text-center text-purple-900 outline-none focus:border-purple-400">
+                <button type="button" onclick="login()" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
                     <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
                 </button>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -472,7 +472,10 @@ app.get('/', (req, res) => {
         }
 
         function login() {
-            const code = document.getElementById('pass-code').value.trim();
+            const inputEl = document.getElementById('pass-code');
+            if (!inputEl) return;
+            const code = inputEl.value.trim();
+
             if (code === AUTH_ADMIN) {
                 userRole = 'admin';
                 currentOwner = 'ADMIN';
@@ -486,7 +489,7 @@ app.get('/', (req, res) => {
                 document.getElementById('gate-screen').classList.add('hidden');
                 loadPanelsForReseller();
             } else {
-                toast('รหัสผ่านไม่ถูกต้อง!');
+                toast('รหัสผ่านไม่ถูกต้อง! กรุณาตรวจสอบการพิมพ์รหัสอีกครั้ง');
             }
         }
 
