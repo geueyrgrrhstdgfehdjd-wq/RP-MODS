@@ -1,11 +1,14 @@
+require('dotenv').config(); // โหลดค่าจากไฟล์ .env
 const express = require('express');
+const crypto = require('crypto');
 const app = express();
 
 app.use(express.json());
 
 // ---------------- CONFIG SYSTEM KEYS ---------------- //
-const ADMIN_CODE = "ZDSAWERBHKLJ";
-const RESELLER_CODE = "ResellBBVC";
+// ดึงรหัสจาก .env เท่านั้น หากไม่มีการตั้งค่าไว้ จะสร้างรหัสสุ่มขึ้นมาใช้ชั่วคราวเพื่อความปลอดภัย
+const ADMIN_CODE = process.env.ADMIN_CODE || crypto.randomBytes(16).toString('hex');
+const RESELLER_CODE = process.env.RESELLER_CODE || crypto.randomBytes(16).toString('hex');
 
 // ---------------- DATABASE (START EMPTY) ---------------- //
 let keysDatabase = [];
@@ -110,19 +113,19 @@ app.get('/api/keys', (req, res) => {
 });
 
 app.post('/api/generate-key', (req, res) => {
-    const { count, durationValue, unit, isLifetime, prefix, owner } = req.body || {};
+    const { clientName, count, durationValue, unit, isLifetime, prefix, owner } = req.body || {};
     const qty = parseInt(count) || 1;
     const isReseller = owner !== 'ADMIN';
+    const targetName = clientName && clientName.trim() !== '' ? clientName.trim() : 'ไม่ระบุชื่อ';
 
-    // คำนวณจำนวนวันตามหน่วยที่เลือก
     let durationDays = 0;
     if (isLifetime) {
-        durationDays = 99999; // โค้ดแทนค่าถาวร
+        durationDays = 99999;
     } else {
         const val = parseInt(durationValue) || 1;
         if (unit === 'month') durationDays = val * 30;
         else if (unit === 'year') durationDays = val * 365;
-        else durationDays = val; // default 'day'
+        else durationDays = val;
     }
 
     if (isReseller) {
@@ -145,6 +148,7 @@ app.post('/api/generate-key', (req, res) => {
         const item = {
             id: Date.now() + i,
             key: generateKey(keyPrefix),
+            clientName: targetName,
             duration: isLifetime ? 'Lifetime (ถาวร)' : `${durationDays} วัน`,
             owner: owner,
             hwid: 'Unbound',
@@ -154,7 +158,7 @@ app.post('/api/generate-key', (req, res) => {
         keysDatabase.unshift(item);
         created.push(item);
     }
-    logActivity('GENERATE_KEY', `สร้าง Key จำนวน ${qty} ใบ (${isLifetime ? 'ถาวร' : durationDays + ' วัน'})`, owner);
+    logActivity('GENERATE_KEY', `สร้าง Key (${targetName}) จำนวน ${qty} ใบ (${isLifetime ? 'ถาวร' : durationDays + ' วัน'})`, owner);
     res.json({ success: true, keys: created });
 });
 
@@ -355,9 +359,10 @@ app.get('/', (req, res) => {
                             <thead class="text-purple-400 border-b border-purple-100 font-normal">
                                 <tr>
                                     <th class="p-2.5">คีย์ (KEY)</th>
+                                    <th class="p-2.5">ผู้ใช้งาน / หมายเหตุ</th>
                                     <th class="p-2.5">สถานะ</th>
                                     <th class="p-2.5">ระยะเวลา</th>
-                                    <th class="p-2.5">เจ้าของ</th>
+                                    <th class="p-2.5">เจ้าของแผง</th>
                                     <th class="p-2.5">จัดการ</th>
                                 </tr>
                             </thead>
@@ -379,11 +384,16 @@ app.get('/', (req, res) => {
             </main>
         </div>
 
-        <!-- Pop-up สร้างคีย์ (ปรับปรุงใหม่ เพิ่ม ถาวร/วัน/เดือน/ปี) -->
+        <!-- Pop-up สร้างคีย์ -->
         <div id="modal-key" class="fixed inset-0 bg-purple-950/30 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
             <div class="glass-card p-6 max-w-sm w-full rounded-3xl space-y-4 border-2 border-purple-200">
                 <h3 class="text-purple-950 font-semibold text-sm flex items-center gap-2"><i class="fa-solid fa-key text-purple-500"></i> สร้างคีย์ใหม่</h3>
                 <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-purple-800 font-medium mb-1">ชื่อผู้ใช้งาน / หมายเหตุคีย์</label>
+                        <input id="key-client-name" type="text" placeholder="เช่น ลูกค้า A / VIP User" class="w-full bg-purple-50/50 border border-purple-200 p-2.5 rounded-xl outline-none focus:border-purple-400">
+                    </div>
+
                     <div>
                         <label class="block text-purple-800 font-medium mb-1">จำนวนคีย์ที่ต้องการสร้าง (ใบ)</label>
                         <input id="key-count" type="number" value="1" min="1" class="w-full bg-purple-50/50 border border-purple-200 p-2.5 rounded-xl outline-none focus:border-purple-400">
@@ -557,6 +567,7 @@ app.get('/', (req, res) => {
                 document.getElementById('manager-keys-body').innerHTML = keys.map(k => \`
                     <tr>
                         <td class="p-2.5 font-mono font-medium text-purple-900">\${k.key}</td>
+                        <td class="p-2.5 text-purple-800 font-medium"><i class="fa-regular fa-user mr-1 text-purple-400"></i>\${k.clientName || 'ไม่ระบุชื่อ'}</td>
                         <td class="p-2.5">
                             <span class="px-2 py-0.5 rounded-full text-[10px] \${
                                 k.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 
@@ -616,6 +627,7 @@ app.get('/', (req, res) => {
             }
 
             async function submitGenerateKey() {
+                const clientName = document.getElementById('key-client-name').value;
                 const count = document.getElementById('key-count').value;
                 const isLifetime = document.getElementById('key-is-lifetime').checked;
                 const durationValue = document.getElementById('key-duration-value').value;
@@ -625,6 +637,7 @@ app.get('/', (req, res) => {
                     method: 'POST',
                     headers: {'Content-Type':'application/json'},
                     body: JSON.stringify({ 
+                        clientName,
                         count, 
                         durationValue, 
                         unit, 
@@ -635,6 +648,7 @@ app.get('/', (req, res) => {
                 const data = await res.json();
                 if (data.success) {
                     closeModal('modal-key');
+                    document.getElementById('key-client-name').value = '';
                     refreshData();
                 } else toast(data.message);
             }
