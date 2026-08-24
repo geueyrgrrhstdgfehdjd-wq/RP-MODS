@@ -92,11 +92,11 @@ app.post('/api/claim-panel', (req, res) => {
     if (!panel) return res.status(404).json({ success: false, message: 'ไม่พบแผงในระบบ' });
     
     if (panel.expiresAt && new Date(panel.expiresAt) < new Date()) {
-        return res.status(403).json({ success: false, message: '⏳ แผงนี้หมดอายุการใช้งานแล้ว!' });
+        return res.status(403).json({ success: false, message: 'แผงนี้หมดอายุการใช้งานแล้ว!' });
     }
 
     if (panel.boundSessionId && panel.boundSessionId !== sessionId) {
-        return res.status(403).json({ success: false, message: '🔒 แผงนี้มีผู้ใช้อื่นใช้งานอยู่' });
+        return res.status(403).json({ success: false, message: 'แผงนี้มีผู้ใช้อื่นใช้งานอยู่' });
     }
 
     panel.boundSessionId = sessionId;
@@ -148,10 +148,24 @@ app.post('/api/generate-key', (req, res) => {
     res.json({ success: true, keys: created });
 });
 
+// API สั่งระงับ/แบน คีย์ (เมื่อกดสั่งระงับ สถานะ Banned จะเพิ่มขึ้น)
+app.post('/api/ban-key/:id', (req, res) => {
+    const keyItem = keysDatabase.find(k => k.id === parseInt(req.params.id));
+    if (keyItem) {
+        keyItem.status = 'banned';
+        logActivity('BAN_KEY', `ระงับ Key ${keyItem.key}`, keyItem.owner);
+        return res.json({ success: true });
+    }
+    res.status(404).json({ success: false, message: 'ไม่พบ คีย์ ในระบบ' });
+});
+
+// API ลบคีย์
 app.delete('/api/delete-key/:id', (req, res) => {
     const keyItem = keysDatabase.find(k => k.id === parseInt(req.params.id));
-    if (keyItem) logActivity('DELETE_KEY', `ลบ Key ${keyItem.key}`, keyItem.owner);
-    keysDatabase = keysDatabase.filter(k => k.id !== parseInt(req.params.id));
+    if (keyItem) {
+        logActivity('DELETE_KEY', `ลบ Key ${keyItem.key}`, keyItem.owner);
+        keysDatabase = keysDatabase.filter(k => k.id !== parseInt(req.params.id));
+    }
     res.json({ success: true });
 });
 
@@ -187,7 +201,7 @@ app.get('/', (req, res) => {
         <title>RP MODS Dashboard</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <!-- โหลดฟอนต์ Kanit สำหรับภาษาไทยที่สวยงามอ่านง่าย -->
+        <!-- โหลดฟอนต์ Kanit สไตล์อ่านง่าย สวยงาม -->
         <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
         <style>
             * { font-family: 'Kanit', sans-serif; box-sizing: border-box; }
@@ -196,11 +210,16 @@ app.get('/', (req, res) => {
             ::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 10px; }
             .glass-card { background: #ffffff; border: 1.5px solid #f3e8ff; box-shadow: 0 8px 20px rgba(168, 85, 247, 0.06); }
             .btn-neon-purple { background: linear-gradient(135deg, #c084fc 0%, #9333ea 100%); color: #ffffff; font-weight: 500; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3); }
-            .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; font-size: 14px; font-weight: 400; color: #7e22ce; cursor: pointer; transition: all 0.2s; }
+            .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; font-size: 14px; font-weight: 400; color: #7e22ce; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
             .sidebar-item:hover { background: #f3e8ff; }
             .sidebar-item.active { background: #f3e8ff; font-weight: 500; color: #6b21a8; border-left: 4px solid #a855f7; }
             .tab-view { display: none; }
             .tab-view.active { display: block; }
+            
+            /* CSS จัดการพับ-กาง Sidebar ให้กะทัดรัด ไม่เกินจอ */
+            .sidebar-collapsed { width: 4.5rem !important; }
+            .sidebar-collapsed .hide-on-collapse { display: none !important; }
+            .sidebar-collapsed .sidebar-item { justify-content: center; padding-left: 0; padding-right: 0; }
         </style>
     </head>
     <body class="min-h-screen flex text-sm" onload="checkAutoLogin()">
@@ -209,15 +228,17 @@ app.get('/', (req, res) => {
         <div id="gate-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-purple-950/30 backdrop-blur-sm">
             <div class="glass-card p-7 max-w-sm w-full rounded-3xl text-center space-y-5 border-2 border-purple-200">
                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-400 to-pink-400 text-white mx-auto flex items-center justify-center text-2xl shadow-md">
-                    <i class="fa-solid fa-heart"></i>
+                    <i class="fa-solid fa-shield-halved"></i>
                 </div>
                 <div>
                     <h2 class="font-semibold text-xl text-purple-950">RP MODS SYSTEM</h2>
-                    <p class="text-xs text-purple-600 mt-0.5">ยินดีต้อนรับ! กรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
+                    <p class="text-xs text-purple-600 mt-0.5">กรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
                 </div>
                 <div class="space-y-3">
                     <input id="pass-code" type="password" placeholder="••••••••••••" class="w-full bg-purple-50/50 border border-purple-200 rounded-xl p-3 text-center text-purple-900 outline-none focus:border-purple-400">
-                    <button onclick="login()" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium">เข้าสู่ระบบ ✨</button>
+                    <button onclick="login()" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
+                    </button>
                 </div>
             </div>
         </div>
@@ -226,8 +247,8 @@ app.get('/', (req, res) => {
         <div id="selector-screen" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-purple-950/30 backdrop-blur-sm hidden">
             <div class="glass-card p-6 max-w-xl w-full rounded-3xl space-y-4 border-2 border-purple-200">
                 <div class="flex justify-between items-center border-b border-purple-100 pb-3">
-                    <h3 class="font-medium text-purple-950 text-sm"><i class="fa-solid fa-store text-purple-500 mr-1"></i> เลือกแผง Reseller ที่ต้องการเข้าใช้งาน</h3>
-                    <button onclick="logout()" class="text-xs text-rose-500 font-normal"><i class="fa-solid fa-power-off"></i> ออกจากระบบ</button>
+                    <h3 class="font-medium text-purple-950 text-sm"><i class="fa-solid fa-store text-purple-500 mr-1.5"></i> เลือกแผง Reseller ที่ต้องการใช้งาน</h3>
+                    <button onclick="logout()" class="text-xs text-rose-500 font-normal hover:underline"><i class="fa-solid fa-power-off mr-1"></i> ออกจากระบบ</button>
                 </div>
                 <div id="panel-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto"></div>
             </div>
@@ -236,66 +257,87 @@ app.get('/', (req, res) => {
         <!-- หน้าหลัก Dashboard -->
         <div id="dashboard-screen" class="flex w-full h-screen overflow-hidden hidden">
             
-            <!-- แถบซ้าย -->
-            <aside class="w-56 border-r border-purple-100 p-4 flex flex-col justify-between bg-white/80 shrink-0">
-                <div class="space-y-5">
-                    <div class="flex items-center gap-2.5 px-1">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-400 to-pink-400 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
-                            <i class="fa-solid fa-sparkles text-lg"></i>
+            <!-- แถบซ้าย (ย่อ-ขยาย พับเปิดปิดได้พอดี) -->
+            <aside id="main-sidebar" class="w-56 border-r border-purple-100 p-3 flex flex-col justify-between bg-white/80 shrink-0 transition-all duration-300">
+                <div class="space-y-4">
+                    <!-- ปุ่มเปิดปิด Sidebar + โลโก้ -->
+                    <div class="flex items-center justify-between px-1">
+                        <div class="flex items-center gap-2.5 overflow-hidden">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-400 to-pink-400 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                                <i class="fa-solid fa-wand-magic-sparkles text-base"></i>
+                            </div>
+                            <div class="truncate hide-on-collapse">
+                                <span class="font-semibold text-base block text-purple-950 leading-tight">RP MODS</span>
+                                <span class="text-[10px] text-purple-500 font-normal">แผงควบคุมระบบ</span>
+                            </div>
                         </div>
-                        <div class="truncate">
-                            <span class="font-semibold text-base block text-purple-950 leading-tight">RP MODS</span>
-                            <span class="text-[11px] text-purple-500 font-normal">แผงควบคุมระบบ</span>
-                        </div>
+                        <button onclick="toggleSidebar()" class="w-7 h-7 rounded-lg hover:bg-purple-100 text-purple-500 flex items-center justify-center transition shrink-0" title="พับ/กาง แถบข้าง">
+                            <i class="fa-solid fa-bars-staggered"></i>
+                        </button>
                     </div>
 
-                    <div class="bg-purple-50/80 border border-purple-100 p-2.5 rounded-xl">
-                        <div class="text-[10px] text-purple-400 font-normal uppercase">แผงที่กำลังใช้งาน</div>
-                        <div id="active-panel-name" class="text-xs font-semibold text-purple-900 truncate">ADMIN</div>
+                    <!-- สถานะแผงที่ใช้อยู่ -->
+                    <div class="bg-purple-50/80 border border-purple-100 p-2 rounded-xl text-center">
+                        <div class="text-[9px] text-purple-400 font-normal uppercase hide-on-collapse">แผงที่ใช้งาน</div>
+                        <div id="active-panel-name" class="text-xs font-semibold text-purple-900 truncate"><i class="fa-solid fa-user-gear mr-1 text-purple-400"></i><span class="hide-on-collapse">ADMIN</span></div>
                     </div>
 
+                    <!-- เมนูการใช้งาน -->
                     <nav class="space-y-1">
-                        <div id="nav-dashboard" onclick="switchTab('dashboard')" class="sidebar-item active"><i class="fa-solid fa-chart-pie w-4 text-center"></i> ภาพรวมระบบ</div>
-                        <div id="nav-keys" onclick="switchTab('keys')" class="sidebar-item"><i class="fa-solid fa-key w-4 text-center"></i> จัดการคีย์</div>
-                        <div id="nav-logs" onclick="switchTab('logs')" class="sidebar-item"><i class="fa-solid fa-clock-rotate-left w-4 text-center"></i> ประวัติระบบ</div>
+                        <div id="nav-dashboard" onclick="switchTab('dashboard')" class="sidebar-item active" title="ภาพรวมระบบ">
+                            <i class="fa-solid fa-chart-pie w-5 text-center text-base"></i>
+                            <span class="hide-on-collapse">ภาพรวมระบบ</span>
+                        </div>
+                        <div id="nav-keys" onclick="switchTab('keys')" class="sidebar-item" title="จัดการคีย์">
+                            <i class="fa-solid fa-key w-5 text-center text-base"></i>
+                            <span class="hide-on-collapse">จัดการคีย์</span>
+                        </div>
+                        <div id="nav-logs" onclick="switchTab('logs')" class="sidebar-item" title="ประวัติระบบ">
+                            <i class="fa-solid fa-clock-rotate-left w-5 text-center text-base"></i>
+                            <span class="hide-on-collapse">ประวัติระบบ</span>
+                        </div>
                     </nav>
                 </div>
 
-                <button onclick="logout()" class="bg-purple-50/60 hover:bg-rose-50 p-2.5 rounded-xl flex items-center justify-center gap-2 border border-purple-100 text-rose-500 font-medium text-xs transition">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i> ออกจากระบบ
+                <!-- ปุ่มออกจากระบบ -->
+                <button onclick="logout()" class="bg-purple-50/60 hover:bg-rose-50 p-2.5 rounded-xl flex items-center justify-center gap-2 border border-purple-100 text-rose-500 font-medium text-xs transition" title="ออกจากระบบ">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span class="hide-on-collapse">ออกจากระบบ</span>
                 </button>
             </aside>
 
             <!-- พื้นที่เนื้อหาหลักด้านขวา -->
             <main class="flex-1 p-6 space-y-5 overflow-y-auto">
                 <header class="flex justify-between items-center pb-4 border-b border-purple-100">
-                    <h1 class="text-lg font-semibold text-purple-950">แผงควบคุม RP MODS ✨</h1>
+                    <h1 class="text-lg font-semibold text-purple-950 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-purple-500"></i> แผงควบคุม RP MODS
+                    </h1>
                 </header>
 
                 <div id="tab-dashboard" class="tab-view active space-y-5">
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5">
                         <div class="glass-card p-4 rounded-2xl">
-                            <div class="text-xs font-normal text-purple-400">จำนวนคีย์ทั้งหมด</div>
+                            <div class="text-xs font-normal text-purple-400 flex items-center gap-1.5"><i class="fa-solid fa-database"></i> จำนวนคีย์ทั้งหมด</div>
                             <div id="stat-total" class="text-2xl font-semibold text-purple-950 mt-1">0</div>
                         </div>
                         <div class="glass-card p-4 rounded-2xl">
-                            <div class="text-xs font-normal text-emerald-500">ใช้งานได้ (Active)</div>
+                            <div class="text-xs font-normal text-emerald-500 flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> ใช้งานได้ (Active)</div>
                             <div id="stat-active" class="text-2xl font-semibold text-emerald-600 mt-1">0</div>
                         </div>
                         <div class="glass-card p-4 rounded-2xl">
-                            <div class="text-xs font-normal text-amber-500">หมดอายุ (Expired)</div>
+                            <div class="text-xs font-normal text-amber-500 flex items-center gap-1.5"><i class="fa-solid fa-hourglass-end"></i> หมดอายุ (Expired)</div>
                             <div id="stat-expired" class="text-2xl font-semibold text-amber-600 mt-1">0</div>
                         </div>
                         <div class="glass-card p-4 rounded-2xl">
-                            <div class="text-xs font-normal text-rose-400">ถูกระงับ (Banned)</div>
+                            <div class="text-xs font-normal text-rose-400 flex items-center gap-1.5"><i class="fa-solid fa-ban"></i> ถูกระงับ (Banned)</div>
                             <div id="stat-banned" class="text-2xl font-semibold text-rose-500 mt-1">0</div>
                         </div>
                     </div>
 
                     <section id="admin-panel-section" class="glass-card p-5 rounded-2xl space-y-3.5 hidden">
                         <div class="flex justify-between items-center pb-2.5 border-b border-purple-100">
-                            <h3 class="font-semibold text-purple-950 text-xs"><i class="fa-solid fa-users-gear text-purple-500 mr-1"></i> จัดการแผงร้านค้า Reseller</h3>
-                            <button onclick="openPanelModal()" class="btn-neon-purple px-3.5 py-1.5 rounded-xl text-xs">+ สร้างแผงใหม่</button>
+                            <h3 class="font-semibold text-purple-950 text-xs flex items-center gap-1.5"><i class="fa-solid fa-users-gear text-purple-500"></i> จัดการแผงร้านค้า Reseller</h3>
+                            <button onclick="openPanelModal()" class="btn-neon-purple px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1"><i class="fa-solid fa-plus"></i> สร้างแผงใหม่</button>
                         </div>
                         <div id="admin-panel-list" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
                     </section>
@@ -303,9 +345,19 @@ app.get('/', (req, res) => {
 
                 <div id="tab-keys" class="tab-view space-y-4">
                     <div class="glass-card p-5 rounded-2xl">
+                        <div class="flex justify-between items-center pb-3 mb-3 border-b border-purple-100">
+                            <h3 class="font-semibold text-xs text-purple-950"><i class="fa-solid fa-key text-purple-500 mr-1"></i> รายการคีย์ในระบบ</h3>
+                            <button onclick="genKeyPrompt()" class="btn-neon-purple px-3 py-1.5 rounded-xl text-xs flex items-center gap-1"><i class="fa-solid fa-plus"></i> สร้างคีย์ใหม่</button>
+                        </div>
                         <table class="w-full text-left text-xs">
                             <thead class="text-purple-400 border-b border-purple-100 font-normal">
-                                <tr><th class="p-2.5">คีย์ (KEY)</th><th class="p-2.5">ระยะเวลา</th><th class="p-2.5">เจ้าของ</th><th class="p-2.5">จัดการ</th></tr>
+                                <tr>
+                                    <th class="p-2.5">คีย์ (KEY)</th>
+                                    <th class="p-2.5">สถานะ</th>
+                                    <th class="p-2.5">ระยะเวลา</th>
+                                    <th class="p-2.5">เจ้าของ</th>
+                                    <th class="p-2.5">จัดการ</th>
+                                </tr>
                             </thead>
                             <tbody id="manager-keys-body" class="divide-y divide-purple-50"></tbody>
                         </table>
@@ -328,7 +380,7 @@ app.get('/', (req, res) => {
         <!-- Pop-up สร้างแผง -->
         <div id="modal-panel" class="fixed inset-0 bg-purple-950/30 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
             <div class="glass-card p-6 max-w-sm w-full rounded-3xl space-y-4 border-2 border-purple-200">
-                <h3 class="text-purple-950 font-semibold text-sm">สร้างแผง Reseller ใหม่ 🌸</h3>
+                <h3 class="text-purple-950 font-semibold text-sm flex items-center gap-2"><i class="fa-solid fa-folder-plus text-purple-500"></i> สร้างแผง Reseller ใหม่</h3>
                 <div class="space-y-3 text-xs">
                     <div>
                         <label class="block text-purple-800 font-medium mb-1">ชื่อแผงร้านค้า</label>
@@ -337,7 +389,7 @@ app.get('/', (req, res) => {
 
                     <div class="flex items-center gap-2 p-2 bg-purple-50/50 rounded-xl border border-purple-100">
                         <input id="panel-is-lifetime" type="checkbox" onchange="toggleDaysInput(this.checked)" class="w-4 h-4 accent-purple-500 rounded">
-                        <label for="panel-is-lifetime" class="font-normal text-purple-900 cursor-pointer">♾️ แผงถาวร (Lifetime / ไม่หมดอายุ)</label>
+                        <label for="panel-is-lifetime" class="font-normal text-purple-900 cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-infinity text-purple-500"></i> แผงถาวร (Lifetime / ไม่หมดอายุ)</label>
                     </div>
 
                     <div id="days-input-box">
@@ -363,6 +415,12 @@ app.get('/', (req, res) => {
             }
 
             function toast(msg) { alert(msg); }
+
+            // ฟังก์ชัน เปิด/ปิด สลับการพับ Sidebar
+            function toggleSidebar() {
+                const sidebar = document.getElementById('main-sidebar');
+                sidebar.classList.toggle('sidebar-collapsed');
+            }
 
             function toggleDaysInput(isLifetime) {
                 const daysBox = document.getElementById('days-input-box');
@@ -413,7 +471,7 @@ app.get('/', (req, res) => {
                         <div class="flex justify-between items-center">
                             <div class="font-medium text-purple-950">\${p.name}</div>
                             <span class="text-[10px] font-normal px-2 py-0.5 rounded-full \${p.expiresAt ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}">
-                                \${p.expiresAt ? 'จำกัดเวลา' : '♾️ ถาวร'}
+                                <i class="fa-solid \${p.expiresAt ? 'fa-clock' : 'fa-infinity'} mr-1"></i>\${p.expiresAt ? 'จำกัดเวลา' : 'ถาวร'}
                             </span>
                         </div>
                         <button onclick="claimPanel('\${p.id}', '\${p.name}')" class="w-full btn-neon-purple py-2 rounded-xl text-xs">เข้าใช้งานแผงนี้</button>
@@ -434,7 +492,7 @@ app.get('/', (req, res) => {
 
             function showDashboard() {
                 document.getElementById('dashboard-screen').classList.remove('hidden');
-                document.getElementById('active-panel-name').innerText = currentOwner;
+                document.getElementById('active-panel-name').innerHTML = '<i class="fa-solid fa-user-gear mr-1 text-purple-400"></i><span class="hide-on-collapse">' + currentOwner + '</span>';
                 if (userRole === 'admin') document.getElementById('admin-panel-section').classList.remove('hidden');
                 refreshData();
             }
@@ -452,6 +510,44 @@ app.get('/', (req, res) => {
                 document.getElementById('stat-expired').innerText = stat.expired;
                 document.getElementById('stat-banned').innerText = stat.banned;
 
+                // ดึงข้อมูล คีย์
+                const resKeys = await fetch('/api/keys?owner=' + currentOwner);
+                const keys = await resKeys.json();
+                document.getElementById('manager-keys-body').innerHTML = keys.map(k => \`
+                    <tr>
+                        <td class="p-2.5 font-mono font-medium text-purple-900">\${k.key}</td>
+                        <td class="p-2.5">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] \${
+                                k.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 
+                                k.status === 'banned' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                            }">
+                                <i class="fa-solid \${
+                                    k.status === 'active' ? 'fa-circle-check' : 
+                                    k.status === 'banned' ? 'fa-ban' : 'fa-hourglass-end'
+                                } mr-1"></i>\${k.status.toUpperCase()}
+                            </span>
+                        </td>
+                        <td class="p-2.5 text-purple-700">\${k.duration} วัน</td>
+                        <td class="p-2.5 text-purple-600">\${k.owner}</td>
+                        <td class="p-2.5 space-x-2">
+                            \${k.status !== 'banned' ? \`<button onclick="banKey(\${k.id})" class="text-amber-600 hover:underline"><i class="fa-solid fa-ban mr-1"></i>ระงับ</button>\` : ''}
+                            <button onclick="deleteKey(\${k.id})" class="text-rose-500 hover:underline"><i class="fa-solid fa-trash-can mr-1"></i>ลบ</button>
+                        </td>
+                    </tr>
+                \`).join('');
+
+                // ดึงข้อมูล Logs
+                const resLogs = await fetch('/api/logs?owner=' + currentOwner);
+                const logs = await resLogs.json();
+                document.getElementById('logs-table-body').innerHTML = logs.map(l => \`
+                    <tr>
+                        <td class="p-2.5 text-purple-400">\${l.timestamp}</td>
+                        <td class="p-2.5 font-medium text-purple-900">\${l.user}</td>
+                        <td class="p-2.5 font-semibold text-purple-700">\${l.action}</td>
+                        <td class="p-2.5 text-purple-600">\${l.detail}</td>
+                    </tr>
+                \`).join('');
+
                 if (userRole === 'admin') {
                     const resP = await fetch('/api/panels');
                     const panels = await resP.json();
@@ -463,14 +559,43 @@ app.get('/', (req, res) => {
                                 <div class="flex justify-between items-start">
                                     <div class="font-medium text-xs text-purple-950">\${p.name}</div>
                                     <span class="text-[9px] px-1.5 py-0.5 rounded \${p.expiresAt ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
-                                        \${p.expiresAt ? 'จำกัดวัน' : '♾️ ถาวร'}
+                                        <i class="fa-solid \${p.expiresAt ? 'fa-clock' : 'fa-infinity'} mr-0.5"></i>\${p.expiresAt ? 'จำกัดวัน' : 'ถาวร'}
                                     </span>
                                 </div>
                                 <div class="text-[10px] text-purple-600">โควตา: \${p.keysCreated}/\${p.keyQuota}</div>
-                                <button onclick="deletePanel('\${p.id}')" class="text-rose-500 text-xs font-normal hover:underline">ลบแผง</button>
+                                <button onclick="deletePanel('\${p.id}')" class="text-rose-500 text-xs font-normal hover:underline"><i class="fa-solid fa-trash-can mr-1"></i>ลบแผง</button>
                             </div>
                         \`).join('');
                     }
+                }
+            }
+
+            async function genKeyPrompt() {
+                const count = prompt('ต้องการสร้างจำนวนกี่ใบ?', '1');
+                const days = prompt('จำนวนวันใช้งาน?', '1');
+                if (count && days) {
+                    const res = await fetch('/api/generate-key', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ count, days, owner: currentOwner })
+                    });
+                    const data = await res.json();
+                    if (data.success) refreshData();
+                    else toast(data.message);
+                }
+            }
+
+            async function banKey(id) {
+                if (confirm('สั่งระงับ (Ban) คีย์นี้ใช่หรือไม่?')) {
+                    await fetch('/api/ban-key/' + id, { method: 'POST' });
+                    refreshData();
+                }
+            }
+
+            async function deleteKey(id) {
+                if (confirm('ยืนยันลบ คีย์ นี้จากระบบ?')) {
+                    await fetch('/api/delete-key/' + id, { method: 'DELETE' });
+                    refreshData();
                 }
             }
 
@@ -490,7 +615,7 @@ app.get('/', (req, res) => {
             }
 
             async function deletePanel(id) {
-                if (confirm('ลบแผงนี้?')) {
+                if (confirm('ยืนยันการลบแผงนี้?')) {
                     await fetch('/api/delete-panel/' + id, { method: 'DELETE' });
                     refreshData();
                 }
