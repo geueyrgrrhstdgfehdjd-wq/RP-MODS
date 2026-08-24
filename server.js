@@ -4,7 +4,7 @@ const app = express();
 
 app.use(express.json());
 
-// ---------------- CONFIG SYSTEM KEYS (ฝังรหัสผ่านลงในโค้ด) ---------------- //
+// ---------------- CONFIG SYSTEM KEYS ---------------- //
 const ADMIN_CODE = "ZDSAWERBHKLJ";
 const RESELLER_CODE = "ResellBBVC";
 
@@ -32,19 +32,6 @@ function generateKey(prefix = "RPMODS") {
 }
 
 // ---------------- API ENDPOINTS ---------------- //
-
-app.post('/api/login', (req, res) => {
-    const { code } = req.body || {};
-    if (code === ADMIN_CODE) {
-        logActivity('LOGIN', 'Admin เข้าสู่ระบบ', 'ADMIN');
-        return res.json({ success: true, role: 'admin' });
-    }
-    if (code === RESELLER_CODE) {
-        logActivity('LOGIN', 'Reseller เข้าสู่ระบบ', 'RESELLER');
-        return res.json({ success: true, role: 'reseller' });
-    }
-    res.status(401).json({ success: false, message: 'รหัสผ่านไม่ถูกต้อง!' });
-});
 
 app.get('/api/panels', (req, res) => {
     res.json(resellerPanels);
@@ -240,12 +227,12 @@ app.get('/', (req, res) => {
                 <h2 class="font-semibold text-xl text-purple-950">RP MODS SYSTEM</h2>
                 <p class="text-xs text-purple-600 mt-0.5">กรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
             </div>
-            <div class="space-y-3">
+            <form onsubmit="event.preventDefault(); login();" class="space-y-3">
                 <input id="pass-code" type="password" placeholder="••••••••••••" class="w-full bg-purple-50/50 border border-purple-200 rounded-xl p-3 text-center text-purple-900 outline-none focus:border-purple-400">
-                <button onclick="login()" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
+                <button type="submit" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
                     <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
                 </button>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -438,6 +425,9 @@ app.get('/', (req, res) => {
     </div>
 
     <script>
+        const AUTH_ADMIN = "${ADMIN_CODE}";
+        const AUTH_RESELLER = "${RESELLER_CODE}";
+
         let userRole = localStorage.getItem('userRole') || null;
         let currentOwner = localStorage.getItem('currentOwner') || 'ADMIN';
         let mySessionId = localStorage.getItem('mySessionId');
@@ -467,17 +457,23 @@ app.get('/', (req, res) => {
             document.getElementById('nav-' + t).classList.add('active');
         }
 
-        async function login() {
+        function login() {
             const code = document.getElementById('pass-code').value.trim();
-            const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({code}) });
-            const data = await res.json();
-            if (data.success) {
-                userRole = data.role;
-                localStorage.setItem('userRole', userRole);
+            if (code === AUTH_ADMIN) {
+                userRole = 'admin';
+                currentOwner = 'ADMIN';
+                localStorage.setItem('userRole', 'admin');
+                localStorage.setItem('currentOwner', 'ADMIN');
                 document.getElementById('gate-screen').classList.add('hidden');
-                if (userRole === 'admin') { currentOwner = 'ADMIN'; localStorage.setItem('currentOwner', 'ADMIN'); showDashboard(); }
-                else loadPanelsForReseller();
-            } else toast(data.message);
+                showDashboard();
+            } else if (code === AUTH_RESELLER) {
+                userRole = 'reseller';
+                localStorage.setItem('userRole', 'reseller');
+                document.getElementById('gate-screen').classList.add('hidden');
+                loadPanelsForReseller();
+            } else {
+                toast('รหัสผ่านไม่ถูกต้อง!');
+            }
         }
 
         async function loadPanelsForReseller() {
