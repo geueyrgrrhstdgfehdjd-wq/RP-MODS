@@ -147,6 +147,18 @@ app.post('/api/generate-key', (req, res) => {
     res.json({ success: true, keys: created });
 });
 
+// API สำหรับรีเซ็ตเวลาคีย์ (Reset Key Time)
+app.post('/api/reset-key/:id', (req, res) => {
+    const keyItem = keysDatabase.find(k => k.id === parseInt(req.params.id));
+    if (keyItem) {
+        keyItem.status = 'active';
+        keyItem.createdAt = new Date().toLocaleString('th-TH');
+        logActivity('RESET_KEY', `รีเซ็ตเวลาใช้งาน Key ${keyItem.key} ใหม่`, keyItem.owner);
+        return res.json({ success: true, message: 'รีเซ็ตเวลาสำเร็จ' });
+    }
+    res.status(404).json({ success: false, message: 'ไม่พบ คีย์ ในระบบ' });
+});
+
 app.post('/api/ban-key/:id', (req, res) => {
     const keyItem = keysDatabase.find(k => k.id === parseInt(req.params.id));
     if (keyItem) {
@@ -215,7 +227,7 @@ app.get('/', (req, res) => {
         .sidebar-collapsed .sidebar-item { justify-content: center; padding-left: 0; padding-right: 0; }
     </style>
 </head>
-<body class="min-h-screen flex text-sm" onload="checkAutoLogin()">
+<body class="min-h-screen flex text-sm" onload="checkAutoLogin()" onclick="closeAllMenus(event)">
 
     <!-- หน้าเข้าสู่ระบบ -->
     <div id="gate-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-purple-950/30 backdrop-blur-sm">
@@ -335,19 +347,21 @@ app.get('/', (req, res) => {
                         <h3 class="font-semibold text-xs text-purple-950"><i class="fa-solid fa-key text-purple-500 mr-1"></i> รายการคีย์ในระบบ</h3>
                         <button onclick="openKeyModal()" class="btn-neon-purple px-3 py-1.5 rounded-xl text-xs flex items-center gap-1"><i class="fa-solid fa-plus"></i> สร้างคีย์ใหม่</button>
                     </div>
-                    <table class="w-full text-left text-xs">
-                        <thead class="text-purple-400 border-b border-purple-100 font-normal">
-                            <tr>
-                                <th class="p-2.5">คีย์ (KEY)</th>
-                                <th class="p-2.5">ผู้ใช้งาน / หมายเหตุ</th>
-                                <th class="p-2.5">สถานะ</th>
-                                <th class="p-2.5">ระยะเวลา</th>
-                                <th class="p-2.5">เจ้าของแผง</th>
-                                <th class="p-2.5">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="manager-keys-body" class="divide-y divide-purple-50"></tbody>
-                    </table>
+                    <div class="overflow-x-auto overflow-y-visible">
+                        <table class="w-full text-left text-xs">
+                            <thead class="text-purple-400 border-b border-purple-100 font-normal">
+                                <tr>
+                                    <th class="p-2.5">คีย์ (KEY)</th>
+                                    <th class="p-2.5">ผู้ใช้งาน / หมายเหตุ</th>
+                                    <th class="p-2.5">สถานะ</th>
+                                    <th class="p-2.5">ระยะเวลา</th>
+                                    <th class="p-2.5">เจ้าของแผง</th>
+                                    <th class="p-2.5 text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manager-keys-body" class="divide-y divide-purple-50"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -517,6 +531,20 @@ app.get('/', (req, res) => {
 
         function logout() { localStorage.clear(); location.reload(); }
 
+        // Action Menu Handler
+        function toggleKeyMenu(event, id) {
+            event.stopPropagation();
+            const existingMenu = document.getElementById('action-menu-' + id);
+            closeAllMenus();
+            if (existingMenu) {
+                existingMenu.classList.toggle('hidden');
+            }
+        }
+
+        function closeAllMenus() {
+            document.querySelectorAll('.key-action-dropdown').forEach(el => el.classList.add('hidden'));
+        }
+
         async function refreshData() {
             const resStat = await fetch('/api/stats?owner=' + currentOwner);
             const stat = await resStat.json();
@@ -534,9 +562,15 @@ app.get('/', (req, res) => {
                     '<td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] ' + (k.status === 'active' ? 'bg-emerald-100 text-emerald-700' : k.status === 'banned' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700') + '">' + k.status.toUpperCase() + '</span></td>' +
                     '<td class="p-2.5 text-purple-700 font-medium">' + k.duration + '</td>' +
                     '<td class="p-2.5 text-purple-600">' + k.owner + '</td>' +
-                    '<td class="p-2.5 space-x-2">' +
-                        (k.status !== 'banned' ? '<button onclick="banKey(' + k.id + ')" class="text-amber-600 hover:underline">ระงับ</button>' : '') +
-                        '<button onclick="deleteKey(' + k.id + ')" class="text-rose-500 hover:underline">ลบ</button>' +
+                    '<td class="p-2.5 text-center relative">' +
+                        '<button onclick="toggleKeyMenu(event, ' + k.id + ')" class="w-8 h-8 rounded-xl bg-purple-100/70 hover:bg-purple-200 text-purple-700 inline-flex items-center justify-center transition shadow-sm">' +
+                            '<i class="fa-solid fa-key"></i>' +
+                        '</button>' +
+                        '<div id="action-menu-' + k.id + '" class="key-action-dropdown hidden absolute right-2 mt-1 w-36 bg-white border border-purple-100 rounded-xl shadow-xl z-30 overflow-hidden text-xs text-left">' +
+                            '<button onclick="resetKey(' + k.id + ')" class="w-full px-3 py-2 hover:bg-purple-50 text-purple-700 flex items-center gap-2 border-b border-purple-50"><i class="fa-solid fa-rotate text-purple-500"></i> รีเซ็ตเวลา</button>' +
+                            (k.status !== 'banned' ? '<button onclick="banKey(' + k.id + ')" class="w-full px-3 py-2 hover:bg-amber-50 text-amber-600 flex items-center gap-2 border-b border-purple-50"><i class="fa-solid fa-ban text-amber-500"></i> ระงับคีย์</button>' : '') +
+                            '<button onclick="deleteKey(' + k.id + ')" class="w-full px-3 py-2 hover:bg-rose-50 text-rose-500 flex items-center gap-2"><i class="fa-solid fa-trash text-rose-400"></i> ลบคีย์</button>' +
+                        '</div>' +
                     '</td>' +
                 '</tr>'
             ).join('');
@@ -580,8 +614,27 @@ app.get('/', (req, res) => {
             if (data.success) { closeModal('modal-key'); refreshData(); } else toast(data.message);
         }
 
-        async function banKey(id) { if (confirm('ระงับคีย์นี้?')) { await fetch('/api/ban-key/' + id, { method: 'POST' }); refreshData(); } }
-        async function deleteKey(id) { if (confirm('ลบคีย์นี้?')) { await fetch('/api/delete-key/' + id, { method: 'DELETE' }); refreshData(); } }
+        async function resetKey(id) { 
+            closeAllMenus();
+            if (confirm('ต้องการรีเซ็ตเวลาของคีย์นี้ให้เริ่มใหม่ใช่หรือไม่?')) { 
+                await fetch('/api/reset-key/' + id, { method: 'POST' }); 
+                refreshData(); 
+            } 
+        }
+        async function banKey(id) { 
+            closeAllMenus();
+            if (confirm('ระงับคีย์นี้?')) { 
+                await fetch('/api/ban-key/' + id, { method: 'POST' }); 
+                refreshData(); 
+            } 
+        }
+        async function deleteKey(id) { 
+            closeAllMenus();
+            if (confirm('ลบคีย์นี้?')) { 
+                await fetch('/api/delete-key/' + id, { method: 'DELETE' }); 
+                refreshData(); 
+            } 
+        }
         
         async function submitCreatePanel() {
             const name = document.getElementById('panel-name').value;
