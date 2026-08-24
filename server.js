@@ -147,7 +147,6 @@ app.post('/api/generate-key', (req, res) => {
     res.json({ success: true, keys: created });
 });
 
-// API สำหรับรีเซ็ตเวลาคีย์ (Reset Key Time)
 app.post('/api/reset-key/:id', (req, res) => {
     const keyItem = keysDatabase.find(k => k.id === parseInt(req.params.id));
     if (keyItem) {
@@ -227,9 +226,8 @@ app.get('/', (req, res) => {
         .sidebar-collapsed .sidebar-item { justify-content: center; padding-left: 0; padding-right: 0; }
     </style>
 </head>
-<body class="min-h-screen flex text-sm" onload="checkAutoLogin()" onclick="closeAllMenus(event)">
+<body class="min-h-screen flex text-sm" onload="initApp()" onclick="closeAllMenus(event)">
 
-    <!-- หน้าเข้าสู่ระบบ -->
     <div id="gate-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-purple-950/30 backdrop-blur-sm">
         <div class="glass-card p-7 max-w-sm w-full rounded-3xl text-center space-y-5 border-2 border-purple-200">
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-400 to-pink-400 text-white mx-auto flex items-center justify-center text-2xl shadow-md">
@@ -239,16 +237,17 @@ app.get('/', (req, res) => {
                 <h2 class="font-semibold text-xl text-purple-950">RP MODS SYSTEM</h2>
                 <p class="text-xs text-purple-600 mt-0.5">กรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
             </div>
+
             <div class="space-y-3">
-                <input id="pass-code" type="password" placeholder="••••••••••••" onkeyup="if(event.key==='Enter') login()" class="w-full bg-purple-50/50 border border-purple-200 rounded-xl p-3 text-center text-purple-900 outline-none focus:border-purple-400">
-                <button type="button" onclick="login()" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
+                <input id="pass-code" type="password" placeholder="••••••••••••" autocomplete="off" class="w-full bg-purple-50/50 border border-purple-200 rounded-xl p-3 text-center text-purple-900 outline-none focus:border-purple-400">
+                <p id="login-error-msg" class="text-xs text-rose-500 font-medium hidden"></p>
+                <button type="button" id="btn-submit-login" onclick="doLogin()" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2">
                     <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- หน้าเลือกแผง -->
     <div id="selector-screen" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-purple-950/30 backdrop-blur-sm hidden">
         <div class="glass-card p-6 max-w-xl w-full rounded-3xl space-y-4 border-2 border-purple-200">
             <div class="flex justify-between items-center border-b border-purple-100 pb-3">
@@ -259,7 +258,6 @@ app.get('/', (req, res) => {
         </div>
     </div>
 
-    <!-- หน้าหลัก Dashboard -->
     <div id="dashboard-screen" class="flex w-full h-screen overflow-hidden hidden">
         <aside id="main-sidebar" class="w-56 border-r border-purple-100 p-3 flex flex-col justify-between bg-white/80 shrink-0 transition-all duration-300">
             <div class="space-y-4">
@@ -378,7 +376,6 @@ app.get('/', (req, res) => {
         </main>
     </div>
 
-    <!-- Modals -->
     <div id="modal-key" class="fixed inset-0 bg-purple-950/30 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="glass-card p-6 max-w-sm w-full rounded-3xl space-y-4 border-2 border-purple-200">
             <h3 class="text-purple-950 font-semibold text-sm flex items-center gap-2"><i class="fa-solid fa-key text-purple-500"></i> สร้างคีย์ใหม่</h3>
@@ -442,21 +439,38 @@ app.get('/', (req, res) => {
         const AUTH_ADMIN = "${ADMIN_CODE}";
         const AUTH_RESELLER = "${RESELLER_CODE}";
 
-        let userRole = localStorage.getItem('userRole') || null;
-        let currentOwner = localStorage.getItem('currentOwner') || 'ADMIN';
-        let mySessionId = localStorage.getItem('mySessionId');
+        // Safe LocalStorage Wrapper (ป้องกัน In-App Browser พัง)
+        const storage = {
+            get: (key) => { try { return localStorage.getItem(key); } catch(e) { return window['mem_' + key] || null; } },
+            set: (key, val) => { try { localStorage.setItem(key, val); } catch(e) { window['mem_' + key] = val; } },
+            clear: () => { try { localStorage.clear(); } catch(e) {} }
+        };
+
+        let userRole = storage.get('userRole') || null;
+        let currentOwner = storage.get('currentOwner') || 'ADMIN';
+        let mySessionId = storage.get('mySessionId');
 
         if (!mySessionId) {
             mySessionId = 'sess-' + Math.random().toString(36).substring(2, 9);
-            localStorage.setItem('mySessionId', mySessionId);
+            storage.set('mySessionId', mySessionId);
         }
 
-        function toast(msg) { alert(msg); }
         function toggleSidebar() { document.getElementById('main-sidebar').classList.toggle('sidebar-collapsed'); }
         function toggleDaysInput(v) { document.getElementById('days-input-box').classList.toggle('hidden', v); }
         function toggleKeyDurationInput(v) { document.getElementById('key-duration-box').classList.toggle('hidden', v); }
 
-        function checkAutoLogin() {
+        function initApp() {
+            // ผูก Event ปุ่มกดบนคีย์บอร์ดมือถือ
+            const passInput = document.getElementById('pass-code');
+            if (passInput) {
+                passInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        doLogin();
+                    }
+                });
+            }
+
             if (userRole) {
                 document.getElementById('gate-screen').classList.add('hidden');
                 if (userRole === 'admin') showDashboard();
@@ -471,25 +485,35 @@ app.get('/', (req, res) => {
             document.getElementById('nav-' + t).classList.add('active');
         }
 
-        function login() {
+        function doLogin() {
             const inputEl = document.getElementById('pass-code');
+            const errEl = document.getElementById('login-error-msg');
+            errEl.classList.add('hidden');
+
             if (!inputEl) return;
             const code = inputEl.value.trim();
+
+            if (!code) {
+                errEl.innerText = '⚠️ กรุณากรอกรหัสผ่าน';
+                errEl.classList.remove('hidden');
+                return;
+            }
 
             if (code === AUTH_ADMIN) {
                 userRole = 'admin';
                 currentOwner = 'ADMIN';
-                localStorage.setItem('userRole', 'admin');
-                localStorage.setItem('currentOwner', 'ADMIN');
+                storage.set('userRole', 'admin');
+                storage.set('currentOwner', 'ADMIN');
                 document.getElementById('gate-screen').classList.add('hidden');
                 showDashboard();
             } else if (code === AUTH_RESELLER) {
                 userRole = 'reseller';
-                localStorage.setItem('userRole', 'reseller');
+                storage.set('userRole', 'reseller');
                 document.getElementById('gate-screen').classList.add('hidden');
                 loadPanelsForReseller();
             } else {
-                toast('รหัสผ่านไม่ถูกต้อง! กรุณาตรวจสอบการพิมพ์รหัสอีกครั้ง');
+                errEl.innerText = '⚠️ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
+                errEl.classList.remove('hidden');
             }
         }
 
@@ -519,10 +543,12 @@ app.get('/', (req, res) => {
             const data = await res.json();
             if (data.success) {
                 currentOwner = panelName;
-                localStorage.setItem('currentOwner', currentOwner);
+                storage.set('currentOwner', currentOwner);
                 document.getElementById('selector-screen').classList.add('hidden');
                 showDashboard();
-            } else toast(data.message);
+            } else {
+                alert(data.message);
+            }
         }
 
         function showDashboard() {
@@ -532,7 +558,7 @@ app.get('/', (req, res) => {
             refreshData();
         }
 
-        function logout() { localStorage.clear(); location.reload(); }
+        function logout() { storage.clear(); location.reload(); }
 
         // Action Menu Handler
         function toggleKeyMenu(event, id) {
@@ -614,7 +640,7 @@ app.get('/', (req, res) => {
                 body: JSON.stringify({ clientName, count, durationValue, unit, isLifetime, owner: currentOwner })
             });
             const data = await res.json();
-            if (data.success) { closeModal('modal-key'); refreshData(); } else toast(data.message);
+            if (data.success) { closeModal('modal-key'); refreshData(); } else alert(data.message);
         }
 
         async function resetKey(id) { 
@@ -645,7 +671,7 @@ app.get('/', (req, res) => {
             const isLifetime = document.getElementById('panel-is-lifetime').checked;
             const res = await fetch('/api/create-panel', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, expireDays, isLifetime }) });
             const data = await res.json();
-            if (data.success) { closeModal('modal-panel'); refreshData(); } else toast(data.message);
+            if (data.success) { closeModal('modal-panel'); refreshData(); } else alert(data.message);
         }
 
         async function deletePanel(id) { if (confirm('ลบแผงนี้?')) { await fetch('/api/delete-panel/' + id, { method: 'DELETE' }); refreshData(); } }
