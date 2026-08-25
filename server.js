@@ -14,7 +14,6 @@ let auditLogs = [
     { id: 1, timestamp: new Date().toLocaleString('th-TH'), action: 'SYSTEM_START', detail: 'ระบบเริ่มต้นการทำงานเรียบร้อย', user: 'SYSTEM' }
 ];
 
-// Helper Functions
 function logActivity(action, detail, user) {
     auditLogs.unshift({
         id: Date.now(),
@@ -80,10 +79,6 @@ app.post('/api/claim-panel', (req, res) => {
     
     if (panel.expiresAt && new Date(panel.expiresAt) < new Date()) {
         return res.status(403).json({ success: false, message: 'แผงนี้หมดอายุการใช้งานแล้ว!' });
-    }
-
-    if (panel.boundSessionId && panel.boundSessionId !== sessionId) {
-        return res.status(403).json({ success: false, message: 'แผงนี้มีผู้ใช้อื่นใช้งานอยู่' });
     }
 
     panel.boundSessionId = sessionId;
@@ -199,6 +194,7 @@ app.get('/api/logs', (req, res) => {
 // ---------------- FRONTEND INTERFACE ---------------- //
 
 app.get('/', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.send(`<!DOCTYPE html>
 <html lang="th">
 <head>
@@ -209,7 +205,7 @@ app.get('/', (req, res) => {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        * { font-family: 'Kanit', sans-serif; box-sizing: border-box; }
+        * { font-family: 'Kanit', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background-color: #f5f3ff; color: #2e1065; overflow-x: hidden; touch-action: manipulation; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 10px; }
@@ -223,6 +219,7 @@ app.get('/', (req, res) => {
         .sidebar-collapsed { width: 4.5rem !important; }
         .sidebar-collapsed .hide-on-collapse { display: none !important; }
         .sidebar-collapsed .sidebar-item { justify-content: center; padding-left: 0; padding-right: 0; }
+        button, input { touch-action: manipulation; cursor: pointer; }
     </style>
 </head>
 <body class="min-h-screen flex text-sm">
@@ -237,13 +234,15 @@ app.get('/', (req, res) => {
                 <p class="text-xs text-purple-600 mt-0.5">กรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
             </div>
 
-            <div class="space-y-3">
+            <form onsubmit="handleFormSubmit(event)" class="space-y-3">
                 <input id="pass-code" type="password" placeholder="••••••••••••" autocomplete="off" class="w-full bg-purple-50/50 border border-purple-200 rounded-xl p-3 text-center text-purple-900 outline-none focus:border-purple-400 text-base">
-                <p id="login-error-msg" class="text-xs text-rose-500 font-medium hidden"></p>
-                <button type="button" id="btn-login" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform">
+                
+                <div id="login-error-msg" class="text-xs text-rose-600 font-semibold bg-rose-50 border border-rose-200 p-2 rounded-xl hidden"></div>
+
+                <button type="submit" id="btn-login" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform">
                     <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
                 </button>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -435,127 +434,85 @@ app.get('/', (req, res) => {
     </div>
 
     <script>
-        const AUTH_ADMIN = "${ADMIN_CODE}";
-        const AUTH_RESELLER = "${RESELLER_CODE}";
+        var AUTH_ADMIN = "${ADMIN_CODE}";
+        var AUTH_RESELLER = "${RESELLER_CODE}";
 
-        const memStorage = {};
-        const storage = {
-            get: (key) => { try { return localStorage.getItem(key); } catch(e) { return memStorage[key] || null; } },
-            set: (key, val) => { try { localStorage.setItem(key, val); } catch(e) { memStorage[key] = val; } },
-            clear: () => { try { localStorage.clear(); } catch(e) {} for (let k in memStorage) delete memStorage[k]; }
-        };
-
-        let userRole = storage.get('userRole') || null;
-        let currentOwner = storage.get('currentOwner') || 'ADMIN';
-        let mySessionId = storage.get('mySessionId');
-
-        if (!mySessionId) {
-            mySessionId = 'sess-' + Math.random().toString(36).substring(2, 9);
-            storage.set('mySessionId', mySessionId);
-        }
+        var userRole = null;
+        var currentOwner = 'ADMIN';
+        var mySessionId = 'sess-' + Math.random().toString(36).substring(2, 9);
 
         function toggleSidebar() { document.getElementById('main-sidebar').classList.toggle('sidebar-collapsed'); }
         function toggleDaysInput(v) { document.getElementById('days-input-box').classList.toggle('hidden', v); }
         function toggleKeyDurationInput(v) { document.getElementById('key-duration-box').classList.toggle('hidden', v); }
 
-        function initApp() {
-            if (userRole) {
-                document.getElementById('gate-screen').classList.add('hidden');
-                if (userRole === 'admin') showDashboard();
-                else loadPanelsForReseller();
+        function showError(msg) {
+            var errEl = document.getElementById('login-error-msg');
+            if (errEl) {
+                errEl.innerText = msg;
+                errEl.classList.remove('hidden');
             }
         }
 
-        function doLogin() {
-            const inputEl = document.getElementById('pass-code');
-            const errEl = document.getElementById('login-error-msg');
+        function handleFormSubmit(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            
+            var inputEl = document.getElementById('pass-code');
+            var errEl = document.getElementById('login-error-msg');
             if (errEl) errEl.classList.add('hidden');
 
-            if (!inputEl) return;
-            const code = inputEl.value.trim();
+            if (!inputEl) return false;
+            var code = inputEl.value.trim();
 
             if (!code) {
-                if (errEl) { errEl.innerText = '⚠️ กรุณากรอกรหัสผ่าน'; errEl.classList.remove('hidden'); }
-                alert('กรุณากรอกรหัสผ่าน');
-                return;
+                showError('⚠️ กรุณากรอกรหัสผ่านก่อนเข้าใช้งาน');
+                return false;
             }
 
             if (code === AUTH_ADMIN) {
                 userRole = 'admin';
                 currentOwner = 'ADMIN';
-                storage.set('userRole', 'admin');
-                storage.set('currentOwner', 'ADMIN');
                 document.getElementById('gate-screen').classList.add('hidden');
                 showDashboard();
             } else if (code === AUTH_RESELLER) {
                 userRole = 'reseller';
-                storage.set('userRole', 'reseller');
                 document.getElementById('gate-screen').classList.add('hidden');
                 loadPanelsForReseller();
             } else {
-                if (errEl) { errEl.innerText = '⚠️ รหัสผ่านไม่ถูกต้อง'; errEl.classList.remove('hidden'); }
-                alert('รหัสผ่านไม่ถูกต้อง');
+                showError('⚠️ รหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง');
             }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            initApp();
-            
-            const btnLogin = document.getElementById('btn-login');
-            if (btnLogin) {
-                btnLogin.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    doLogin();
-                });
-            }
-
-            const passInput = document.getElementById('pass-code');
-            if (passInput) {
-                passInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        doLogin();
-                    }
-                });
-            }
-
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.key-action-dropdown') && !e.target.closest('button')) {
-                    closeAllMenus();
-                }
-            });
-        });
-
-        if (document.readyState === 'interactive' || document.readyState === 'complete') {
-            initApp();
+            return false;
         }
 
         function switchTab(t) {
-            document.querySelectorAll('.tab-view').forEach(e => e.classList.remove('active'));
-            document.querySelectorAll('.sidebar-item').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab-view').forEach(function(e) { e.classList.remove('active'); });
+            document.querySelectorAll('.sidebar-item').forEach(function(e) { e.classList.remove('active'); });
             document.getElementById('tab-' + t).classList.add('active');
             document.getElementById('nav-' + t).classList.add('active');
         }
 
         async function loadPanelsForReseller() {
             document.getElementById('selector-screen').classList.remove('hidden');
-            const res = await fetch('/api/panels');
-            const panels = await res.json();
-            if (panels.length === 0) {
-                document.getElementById('panel-list').innerHTML = '<div class="col-span-2 text-center text-purple-400 py-6">ยังไม่มีแผงที่ถูกสร้าง กรุณาติดต่อ Admin</div>';
-                return;
+            try {
+                const res = await fetch('/api/panels');
+                const panels = await res.json();
+                if (panels.length === 0) {
+                    document.getElementById('panel-list').innerHTML = '<div class="col-span-2 text-center text-purple-400 py-6">ยังไม่มีแผงที่ถูกสร้าง กรุณาให้ Admin สร้างแผงก่อน</div>';
+                    return;
+                }
+                document.getElementById('panel-list').innerHTML = panels.map(p => 
+                    '<div class="glass-card p-3.5 rounded-2xl space-y-2.5">' +
+                        '<div class="flex justify-between items-center">' +
+                            '<div class="font-medium text-purple-950">' + p.name + '</div>' +
+                            '<span class="text-[10px] font-normal px-2 py-0.5 rounded-full ' + (p.expiresAt ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700') + '">' +
+                                (p.expiresAt ? 'จำกัดเวลา' : 'ถาวร') +
+                            '</span>' +
+                        '</div>' +
+                        '<button type="button" onclick="claimPanel(\'' + p.id + '\', \'' + p.name + '\')" class="w-full btn-neon-purple py-2 rounded-xl text-xs cursor-pointer">เข้าใช้งานแผงนี้</button>' +
+                    '</div>'
+                ).join('');
+            } catch(e) {
+                console.error(e);
             }
-            document.getElementById('panel-list').innerHTML = panels.map(p => 
-                '<div class="glass-card p-3.5 rounded-2xl space-y-2.5">' +
-                    '<div class="flex justify-between items-center">' +
-                        '<div class="font-medium text-purple-950">' + p.name + '</div>' +
-                        '<span class="text-[10px] font-normal px-2 py-0.5 rounded-full ' + (p.expiresAt ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700') + '">' +
-                            (p.expiresAt ? 'จำกัดเวลา' : 'ถาวร') +
-                        '</span>' +
-                    '</div>' +
-                    '<button onclick="claimPanel(\'' + p.id + '\', \'' + p.name + '\')" class="w-full btn-neon-purple py-2 rounded-xl text-xs">เข้าใช้งานแผงนี้</button>' +
-                '</div>'
-            ).join('');
         }
 
         async function claimPanel(panelId, panelName) {
@@ -563,7 +520,6 @@ app.get('/', (req, res) => {
             const data = await res.json();
             if (data.success) {
                 currentOwner = panelName;
-                storage.set('currentOwner', currentOwner);
                 document.getElementById('selector-screen').classList.add('hidden');
                 showDashboard();
             } else {
@@ -578,15 +534,13 @@ app.get('/', (req, res) => {
             refreshData();
         }
 
-        function logout() { storage.clear(); location.reload(); }
+        function logout() { location.reload(); }
 
         function toggleKeyMenu(event, id) {
             event.stopPropagation();
             const existingMenu = document.getElementById('action-menu-' + id);
             closeAllMenus();
-            if (existingMenu) {
-                existingMenu.classList.toggle('hidden');
-            }
+            if (existingMenu) existingMenu.classList.toggle('hidden');
         }
 
         function closeAllMenus() {
@@ -594,51 +548,55 @@ app.get('/', (req, res) => {
         }
 
         async function refreshData() {
-            const resStat = await fetch('/api/stats?owner=' + currentOwner);
-            const stat = await resStat.json();
-            document.getElementById('stat-total').innerText = stat.total;
-            document.getElementById('stat-active').innerText = stat.active;
-            document.getElementById('stat-expired').innerText = stat.expired;
-            document.getElementById('stat-banned').innerText = stat.banned;
+            try {
+                const resStat = await fetch('/api/stats?owner=' + currentOwner);
+                const stat = await resStat.json();
+                document.getElementById('stat-total').innerText = stat.total;
+                document.getElementById('stat-active').innerText = stat.active;
+                document.getElementById('stat-expired').innerText = stat.expired;
+                document.getElementById('stat-banned').innerText = stat.banned;
 
-            const resKeys = await fetch('/api/keys?owner=' + currentOwner);
-            const keys = await resKeys.json();
-            document.getElementById('manager-keys-body').innerHTML = keys.map(k => 
-                '<tr>' +
-                    '<td class="p-2.5 font-mono font-medium text-purple-900">' + k.key + '</td>' +
-                    '<td class="p-2.5 text-purple-800 font-medium"><i class="fa-regular fa-user mr-1 text-purple-400"></i>' + (k.clientName || 'ไม่ระบุชื่อ') + '</td>' +
-                    '<td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] ' + (k.status === 'active' ? 'bg-emerald-100 text-emerald-700' : k.status === 'banned' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700') + '">' + k.status.toUpperCase() + '</span></td>' +
-                    '<td class="p-2.5 text-purple-700 font-medium">' + k.duration + '</td>' +
-                    '<td class="p-2.5 text-purple-600">' + k.owner + '</td>' +
-                    '<td class="p-2.5 text-center relative">' +
-                        '<button onclick="toggleKeyMenu(event, ' + k.id + ')" class="w-8 h-8 rounded-xl bg-purple-100/70 hover:bg-purple-200 text-purple-700 inline-flex items-center justify-center transition shadow-sm">' +
-                            '<i class="fa-solid fa-key"></i>' +
-                        '</button>' +
-                        '<div id="action-menu-' + k.id + '" class="key-action-dropdown hidden absolute right-2 mt-1 w-36 bg-white border border-purple-100 rounded-xl shadow-xl z-30 overflow-hidden text-xs text-left">' +
-                            '<button onclick="resetKey(' + k.id + ')" class="w-full px-3 py-2 hover:bg-purple-50 text-purple-700 flex items-center gap-2 border-b border-purple-50"><i class="fa-solid fa-rotate text-purple-500"></i> รีเซ็ตเวลา</button>' +
-                            (k.status !== 'banned' ? '<button onclick="banKey(' + k.id + ')" class="w-full px-3 py-2 hover:bg-amber-50 text-amber-600 flex items-center gap-2 border-b border-purple-50"><i class="fa-solid fa-ban text-amber-500"></i> ระงับคีย์</button>' : '') +
-                            '<button onclick="deleteKey(' + k.id + ')" class="w-full px-3 py-2 hover:bg-rose-50 text-rose-500 flex items-center gap-2"><i class="fa-solid fa-trash text-rose-400"></i> ลบคีย์</button>' +
-                        '</div>' +
-                    '</td>' +
-                '</tr>'
-            ).join('');
-
-            const resLogs = await fetch('/api/logs?owner=' + currentOwner);
-            const logs = await resLogs.json();
-            document.getElementById('logs-table-body').innerHTML = logs.map(l => 
-                '<tr><td class="p-2.5 text-purple-400">' + l.timestamp + '</td><td class="p-2.5 font-medium text-purple-900">' + l.user + '</td><td class="p-2.5 font-semibold text-purple-700">' + l.action + '</td><td class="p-2.5 text-purple-600">' + l.detail + '</td></tr>'
-            ).join('');
-
-            if (userRole === 'admin') {
-                const resP = await fetch('/api/panels');
-                const panels = await resP.json();
-                document.getElementById('admin-panel-list').innerHTML = panels.map(p => 
-                    '<div class="bg-purple-50/60 p-3.5 rounded-xl border border-purple-100 space-y-1.5">' +
-                        '<div class="flex justify-between items-start"><div class="font-medium text-xs text-purple-950">' + p.name + '</div></div>' +
-                        '<div class="text-[10px] text-purple-600">โควตา: ' + p.keysCreated + '/' + p.keyQuota + '</div>' +
-                        '<button onclick="deletePanel(\'' + p.id + '\')" class="text-rose-500 text-xs hover:underline">ลบแผง</button>' +
-                    '</div>'
+                const resKeys = await fetch('/api/keys?owner=' + currentOwner);
+                const keys = await resKeys.json();
+                document.getElementById('manager-keys-body').innerHTML = keys.map(k => 
+                    '<tr>' +
+                        '<td class="p-2.5 font-mono font-medium text-purple-900">' + k.key + '</td>' +
+                        '<td class="p-2.5 text-purple-800 font-medium"><i class="fa-regular fa-user mr-1 text-purple-400"></i>' + (k.clientName || 'ไม่ระบุชื่อ') + '</td>' +
+                        '<td class="p-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] ' + (k.status === 'active' ? 'bg-emerald-100 text-emerald-700' : k.status === 'banned' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700') + '">' + k.status.toUpperCase() + '</span></td>' +
+                        '<td class="p-2.5 text-purple-700 font-medium">' + k.duration + '</td>' +
+                        '<td class="p-2.5 text-purple-600">' + k.owner + '</td>' +
+                        '<td class="p-2.5 text-center relative">' +
+                            '<button type="button" onclick="toggleKeyMenu(event, ' + k.id + ')" class="w-8 h-8 rounded-xl bg-purple-100/70 hover:bg-purple-200 text-purple-700 inline-flex items-center justify-center transition shadow-sm">' +
+                                '<i class="fa-solid fa-key"></i>' +
+                            '</button>' +
+                            '<div id="action-menu-' + k.id + '" class="key-action-dropdown hidden absolute right-2 mt-1 w-36 bg-white border border-purple-100 rounded-xl shadow-xl z-30 overflow-hidden text-xs text-left">' +
+                                '<button type="button" onclick="resetKey(' + k.id + ')" class="w-full px-3 py-2 hover:bg-purple-50 text-purple-700 flex items-center gap-2 border-b border-purple-50"><i class="fa-solid fa-rotate text-purple-500"></i> รีเซ็ตเวลา</button>' +
+                                (k.status !== 'banned' ? '<button type="button" onclick="banKey(' + k.id + ')" class="w-full px-3 py-2 hover:bg-amber-50 text-amber-600 flex items-center gap-2 border-b border-purple-50"><i class="fa-solid fa-ban text-amber-500"></i> ระงับคีย์</button>' : '') +
+                                '<button type="button" onclick="deleteKey(' + k.id + ')" class="w-full px-3 py-2 hover:bg-rose-50 text-rose-500 flex items-center gap-2"><i class="fa-solid fa-trash text-rose-400"></i> ลบคีย์</button>' +
+                            '</div>' +
+                        '</td>' +
+                    '</tr>'
                 ).join('');
+
+                const resLogs = await fetch('/api/logs?owner=' + currentOwner);
+                const logs = await resLogs.json();
+                document.getElementById('logs-table-body').innerHTML = logs.map(l => 
+                    '<tr><td class="p-2.5 text-purple-400">' + l.timestamp + '</td><td class="p-2.5 font-medium text-purple-900">' + l.user + '</td><td class="p-2.5 font-semibold text-purple-700">' + l.action + '</td><td class="p-2.5 text-purple-600">' + l.detail + '</td></tr>'
+                ).join('');
+
+                if (userRole === 'admin') {
+                    const resP = await fetch('/api/panels');
+                    const panels = await resP.json();
+                    document.getElementById('admin-panel-list').innerHTML = panels.map(p => 
+                        '<div class="bg-purple-50/60 p-3.5 rounded-xl border border-purple-100 space-y-1.5">' +
+                            '<div class="flex justify-between items-start"><div class="font-medium text-xs text-purple-950">' + p.name + '</div></div>' +
+                            '<div class="text-[10px] text-purple-600">โควตา: ' + p.keysCreated + '/' + p.keyQuota + '</div>' +
+                            '<button type="button" onclick="deletePanel(\'' + p.id + '\')" class="text-rose-500 text-xs hover:underline">ลบแผง</button>' +
+                        '</div>'
+                    ).join('');
+                }
+            } catch(e) {
+                console.error(e);
             }
         }
 
