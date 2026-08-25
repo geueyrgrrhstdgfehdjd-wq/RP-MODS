@@ -237,13 +237,13 @@ app.get('/', (req, res) => {
                 <p class="text-xs text-purple-600 mt-0.5">กรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
             </div>
 
-            <form id="login-form" action="javascript:void(0);" class="space-y-3">
+            <div class="space-y-3">
                 <input id="pass-code" type="password" placeholder="••••••••••••" autocomplete="off" class="w-full bg-purple-50/50 border border-purple-200 rounded-xl p-3 text-center text-purple-900 outline-none focus:border-purple-400 text-base">
                 <p id="login-error-msg" class="text-xs text-rose-500 font-medium hidden"></p>
-                <button type="submit" id="btn-submit-login" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform">
+                <button type="button" id="btn-login" class="w-full btn-neon-purple py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform">
                     <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
                 </button>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -469,14 +469,14 @@ app.get('/', (req, res) => {
         function doLogin() {
             const inputEl = document.getElementById('pass-code');
             const errEl = document.getElementById('login-error-msg');
-            errEl.classList.add('hidden');
+            if (errEl) errEl.classList.add('hidden');
 
             if (!inputEl) return;
             const code = inputEl.value.trim();
 
             if (!code) {
-                errEl.innerText = '⚠️ กรุณากรอกรหัสผ่าน';
-                errEl.classList.remove('hidden');
+                if (errEl) { errEl.innerText = '⚠️ กรุณากรอกรหัสผ่าน'; errEl.classList.remove('hidden'); }
+                alert('กรุณากรอกรหัสผ่าน');
                 return;
             }
 
@@ -493,20 +493,32 @@ app.get('/', (req, res) => {
                 document.getElementById('gate-screen').classList.add('hidden');
                 loadPanelsForReseller();
             } else {
-                errEl.innerText = '⚠️ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
-                errEl.classList.remove('hidden');
+                if (errEl) { errEl.innerText = '⚠️ รหัสผ่านไม่ถูกต้อง'; errEl.classList.remove('hidden'); }
+                alert('รหัสผ่านไม่ถูกต้อง');
             }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             initApp();
-            const form = document.getElementById('login-form');
-            if (form) {
-                form.addEventListener('submit', function(e) {
+            
+            const btnLogin = document.getElementById('btn-login');
+            if (btnLogin) {
+                btnLogin.addEventListener('click', function(e) {
                     e.preventDefault();
                     doLogin();
                 });
             }
+
+            const passInput = document.getElementById('pass-code');
+            if (passInput) {
+                passInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        doLogin();
+                    }
+                });
+            }
+
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('.key-action-dropdown') && !e.target.closest('button')) {
                     closeAllMenus();
