@@ -4,14 +4,14 @@ const app = express();
 app.use(express.json());
 
 // ---------------- CONFIG SYSTEM KEYS ---------------- //
-const ADMIN_CODE = "ZDSAWERBHKLJ";
-const RESELLER_CODE = "ResellBBVC";
+const ADMIN_CODE = "665876534VIP";  // รหัสผ่านแอดมิน
+const RESELLER_CODE = "2251209";      // รหัสผ่านตัวแทน
 
-// ---------------- DATABASE ---------------- //
+// ---------------- DATABASE (IN-MEMORY) ---------------- //
 let keysDatabase = [];
 let resellerPanels = [];
 let auditLogs = [
-    { id: 1, timestamp: new Date().toLocaleString('th-TH'), action: 'SYSTEM_START', detail: 'ระบบเริ่มต้นการทำงาน', user: 'SYSTEM' }
+    { id: 1, timestamp: new Date().toLocaleString('th-TH'), action: 'SYSTEM_START', detail: 'ระบบเริ่มต้นการทำงานเรียบร้อย', user: 'SYSTEM' }
 ];
 
 // Helper Functions
